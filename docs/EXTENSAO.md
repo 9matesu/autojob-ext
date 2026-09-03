@@ -134,6 +134,7 @@ navegação; o único conteúdo lido é o texto do painel que **você** clicou.
 | Sintoma | Causa/Solução |
 | --- | --- |
 | "Recarregue a página da vaga (F5)" | content script não injetado (aba aberta antes de instalar/recarregar a extensão) |
+| "Service worker registration failed. Status code: 2" | registro obsoleto do SW no perfil do Chrome (comum após muitos ↻ com key pinada): remova o cartão da extensão, feche o Chrome com `chrome://restart`, carregue de novo |
 | Seleção não inicia | página exige rolagem prévia ou a vaga está em iframe cross-origin (limitação conhecida) |
 | Elemento errado destacado | o outline mira o elemento exato sob o cursor; use ↑/↓ para ajustar pai/filho |
 | Texto com assunto estranho (ex.: curso aleatório) | você clicou no elemento errado — o toast mostra exatamente o que será enviado; cancele e clique no painel certo |

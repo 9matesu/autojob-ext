@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { fetchSettings, saveSettings, testAiConnection, fetchProviders, type ProviderInfo } from '../../services/api';
-import type { AppSettings } from '../../services/api';
+import { fetchSettings, saveSettings, testAiConnection, fetchProviders, fetchMasterProfile, deleteMasterProfile, type ProviderInfo } from '../../services/api';
+import type { AppSettings, MasterCandidate } from '../../services/api';
 import { AiProviderFields } from './AiProviderFields';
 
 export const SettingsPanel: React.FC = () => {
@@ -11,6 +11,8 @@ export const SettingsPanel: React.FC = () => {
   const [aiModel, setAiModel] = useState('gemini-2.0-flash');
   const [aiApiKey, setAiApiKey] = useState('');
   const [aiBaseUrl, setAiBaseUrl] = useState('');
+  const [baseProfile, setBaseProfile] = useState<MasterCandidate | null>(null);
+  const [swapping, setSwapping] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -20,12 +22,13 @@ export const SettingsPanel: React.FC = () => {
   const load = async () => {
     try {
       setLoading(true);
-      const [data, provs] = await Promise.all([fetchSettings(), fetchProviders()]);
+      const [data, provs, prof] = await Promise.all([fetchSettings(), fetchProviders(), fetchMasterProfile()]);
       setSettings(data);
       setCatalog(provs);
       setAiProvider(data.ai_provider);
       setAiModel(data.ai_model);
       setAiBaseUrl(data.ai_base_url || '');
+      setBaseProfile(prof.has_profile && prof.candidate ? prof.candidate : null);
     } catch (err) {
       console.error(err);
     } finally {
@@ -132,6 +135,41 @@ export const SettingsPanel: React.FC = () => {
                 <div className="text-[10px] text-neutral-600 font-mono">{settings?.detected_compiler || 'Tectonic (Portátil)'}</div>
               </div>
               <span className="brutal-tag brutal-tag-yellow">Pronto</span>
+            </div>
+
+            {/* Currículo base */}
+            <div className="border-2 border-black p-3">
+              <div className="font-bold uppercase mb-1">Currículo base</div>
+              {baseProfile ? (
+                <div className="text-[11px] font-mono space-y-0.5 mb-3">
+                  <div className="font-bold text-xs">{baseProfile.name}</div>
+                  <div className="text-neutral-600">{baseProfile.email}</div>
+                  {baseProfile.source_file && (
+                    <div className="text-neutral-500">arquivo: {baseProfile.source_file}</div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-[11px] font-mono text-neutral-500 mb-3">nenhum perfil ativo</div>
+              )}
+              {baseProfile && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setSwapping(true);
+                    try {
+                      await deleteMasterProfile();
+                      window.location.reload();
+                    } catch (err: any) {
+                      alert('Falha ao remover perfil: ' + err.message);
+                      setSwapping(false);
+                    }
+                  }}
+                  disabled={swapping}
+                  className="brutal-btn w-full py-2 text-[11px]"
+                >
+                  {swapping ? 'Removendo...' : 'Trocar currículo base'}
+                </button>
+              )}
             </div>
           </div>
         )}

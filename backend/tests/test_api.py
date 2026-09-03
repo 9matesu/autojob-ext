@@ -118,6 +118,7 @@ Benefits: flexible hours, health plan, stock options.
 def test_adapt_text_without_key_fails_loudly(monkeypatch):
     _patch_settings(monkeypatch, _keyless_settings())
     client = TestClient(app)
+    test_save_and_get_profile()
     resp = client.post("/api/adapt-text", json={
         "job_text": SAMPLE_JOB_TEXT,
         "page_title": "Senior Software Engineer - Nubank",
@@ -125,6 +126,40 @@ def test_adapt_text_without_key_fails_loudly(monkeypatch):
     })
     assert resp.status_code == 400
     assert "chave" in resp.json()["detail"].lower()
+
+def test_delete_profile_deactivates_and_gates_onboarding():
+    client = TestClient(app)
+    test_save_and_get_profile()
+    assert client.get("/api/profile").json()["has_profile"] is True
+
+    resp = client.delete("/api/profile")
+    assert resp.status_code == 200
+    assert resp.json()["had_active"] is True
+
+    assert client.get("/api/profile").json()["has_profile"] is False
+    assert client.get("/api/health").json()["has_active_candidate"] is False
+
+    resp2 = client.delete("/api/profile")
+    assert resp2.json()["had_active"] is False
+
+def test_adapt_text_without_profile_mentions_onboarding(monkeypatch):
+    _patch_settings(monkeypatch, _keyless_settings())
+    client = TestClient(app)
+    client.delete("/api/profile")
+    resp = client.post("/api/adapt-text", json={
+        "job_text": SAMPLE_JOB_TEXT,
+        "page_title": "Senior Software Engineer - Nubank",
+        "page_url": "https://example.com/job/123",
+    })
+    assert resp.status_code == 400
+    assert "onboarding" in resp.json()["detail"].lower()
+
+def test_get_profile_exposes_source_file():
+    client = TestClient(app)
+    test_save_and_get_profile()
+    data = client.get("/api/profile").json()
+    assert data["has_profile"] is True
+    assert "source_file" in data["candidate"]
 
 def test_adapt_text_live():
     from app.config import get_settings

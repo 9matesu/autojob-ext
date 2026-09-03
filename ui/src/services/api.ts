@@ -181,9 +181,22 @@ export async function detectModels(payload: { ai_provider: string; ai_api_key?: 
   return Array.isArray(data.models) ? (data.models as string[]) : [];
 }
 
-export async function fetchMasterProfile(): Promise<{ has_profile: boolean; profile: CandidateProfile }> {
+export interface MasterCandidate {
+  id: string;
+  name: string;
+  email: string;
+  source_file: string | null;
+}
+
+export async function fetchMasterProfile(): Promise<{ has_profile: boolean; profile: CandidateProfile; candidate?: MasterCandidate }> {
   const res = await fetch(`${API_BASE}/profile`);
   if (!res.ok) throw new Error('Falha ao buscar perfil');
+  return res.json();
+}
+
+export async function deleteMasterProfile(): Promise<{ status: string; had_active: boolean }> {
+  const res = await fetch(`${API_BASE}/profile`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Falha ao remover perfil mestre');
   return res.json();
 }
 

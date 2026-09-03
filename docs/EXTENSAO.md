@@ -137,6 +137,10 @@ navegação; o único conteúdo lido é o texto do painel que **você** clicou.
 | Seleção não inicia | página exige rolagem prévia ou a vaga está em iframe cross-origin (limitação conhecida) |
 | Elemento errado destacado | o outline mira o elemento exato sob o cursor; use ↑/↓ para ajustar pai/filho |
 | Texto com assunto estranho (ex.: curso aleatório) | você clicou no elemento errado — o toast mostra exatamente o que será enviado; cancele e clique no painel certo |
+| Dados parecem falsos (nome/empresa que não são seus) | confira em Config → "Currículo base" qual perfil está ativo; se for resto de teste, use "Trocar currículo base" e refaça o onboarding com seu currículo real |
+| Onboarding não aparece | ele só aparece sem perfil ativo; para refazer, Config → "Trocar currículo base" |
+| Estúdio mostra "Resultado expirado" | o registro sumiu do histórico (limpeza) — capture a vaga novamente no painel |
+| Pré-visualização do PDF falha | confira se o motor está rodando; use "Tentar novamente" ou "Baixar PDF" na própria tela |
 | "Motor Offline" persistente | rode `.\start-backend.ps1`; confira `backend/data/autojob-backend.log`; reinstale o host se o auto-start falhar |
 | Match aparece como "—" | o provedor não devolveu `match_score`; o valor nunca é inventado |
 | Porta 8322 ocupada por outro processo | encerre-o ou ajuste `port` em `native-host/autojob-host.json` e `ui/src/chrome.ts` |
@@ -154,6 +158,9 @@ npm run lint       # oxlint
 cd backend
 .venv\Scripts\python -m pytest tests -q
 ```
+
+Os testes rodam num banco SQLite temporário (`AUTOJOB_DATA_DIR` apontado por
+`tests/conftest.py`) — nunca tocam `backend/data/autojob.db`.
 
 Fixturas de seleção ficam em `extension/test/fixtures/` (LinkedIn/Indeed/Gupy-like).
 `extension/test/build_shim.py` gera o `content_shim.js` que permite dirigir o

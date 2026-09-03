@@ -147,7 +147,24 @@ def get_master_profile():
     cand = profile_model.get_active()
     if not cand:
         return {"has_profile": False, "profile": profile_model.EMPTY_PROFILE}
-    return {"has_profile": True, "candidate": cand, "profile": cand["profile"]}
+    return {
+        "has_profile": True,
+        "candidate": {
+            "id": cand["id"],
+            "name": cand["name"],
+            "email": cand["email"],
+            "source_file": cand.get("source_file"),
+        },
+        "profile": cand["profile"],
+    }
+
+@router.delete("/profile")
+def delete_master_profile():
+    had_active = profile_model.deactivate_active()
+    return {
+        "status": "deactivated" if had_active else "no_active_profile",
+        "had_active": had_active,
+    }
 
 @router.post("/profile")
 def save_master_profile_endpoint(payload: ProfilePayload):
@@ -265,6 +282,8 @@ def adapt_from_text(payload: TextAdaptPayload):
     """DOM-based capture path: raw job panel text from the browser extension."""
     if not payload.job_text or len(payload.job_text.strip()) < 80:
         raise HTTPException(status_code=400, detail="Texto da vaga muito curto para extração.")
+    if not profile_model.get_active():
+        raise HTTPException(status_code=400, detail="Perfil mestre não encontrado. Complete o onboarding primeiro.")
     s = get_settings()
     try:
         job_data = vision.extract_job_from_text(

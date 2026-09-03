@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Download,
   RefreshCw,
@@ -11,6 +11,8 @@ import {
 import {
   compileResume,
   polishBullet,
+  fetchHistory,
+  resumePdfUrl,
 } from '../../services/api';
 import type {
   AdaptedResult,
@@ -32,10 +34,37 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
   const [compiling, setCompiling] = useState(false);
   const [polishingIndex, setPolishingIndex] = useState<{ expIdx: number; bIdx: number } | null>(null);
   const [newSkill, setNewSkill] = useState('');
+  const [pdfStatus, setPdfStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [pdfKey, setPdfKey] = useState(0);
+  const [expired, setExpired] = useState(false);
+
+  // Revalida o snapshot do chrome.storage contra o histórico: o registro
+  // pode ter sumido (limpeza) ou o backend pode ter reiniciado.
+  useEffect(() => {
+    let alive = true;
+    fetchHistory()
+      .then((items) => {
+        if (!alive) return;
+        const found = items.some((it) => it.id === adaptedData.adaptation.id);
+        if (!found) {
+          setExpired(true);
+        } else {
+          setPdfUrl(resumePdfUrl(adaptedData.adaptation.id));
+        }
+      })
+      .catch(() => {
+        // Sem histórico acessível, tenta a URL guardada mesmo assim.
+      });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Recompile PDF
   const handleRecompile = async () => {
     setCompiling(true);
+    setPdfStatus('loading');
     try {
       if (activeTab === 'latex') {
         const res = await compileResume({ raw_tex: rawTex, job: adaptedData.job });
@@ -303,12 +332,57 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
 
         {/* Embedded PDF iframe */}
         <div className="flex-1 w-full h-full bg-neutral-200 p-4">
-          <div className="w-full h-full overflow-hidden border-2 border-black bg-white shadow-[8px_8px_0px_0px_#000000]">
-            <iframe
-              src={pdfUrl}
-              title="Pré-visualização do Currículo"
-              className="w-full h-full border-none"
-            />
+          <div className="w-full h-full overflow-hidden border-2 border-black bg-white shadow-[8px_8px_0px_0px_#000000] relative">
+            {expired ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-6 text-center">
+                <span className="brutal-tag brutal-tag-black">Resultado expirado</span>
+                <p className="text-xs font-mono text-neutral-600 max-w-xs">
+                  Este resultado não está mais no histórico. Capture a vaga novamente no painel.
+                </p>
+                <button onClick={() => window.close()} className="brutal-btn px-4 py-2 text-[11px]">
+                  Fechar aba
+                </button>
+              </div>
+            ) : (
+              <>
+                {pdfStatus === 'loading' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white">
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                    <span className="text-[11px] font-mono uppercase">Carregando PDF...</span>
+                  </div>
+                )}
+                {pdfStatus === 'error' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center bg-white">
+                    <span className="brutal-tag brutal-tag-black">Falha ao carregar</span>
+                    <p className="text-xs font-mono text-neutral-600 max-w-xs">
+                      Não foi possível abrir a pré-visualização. Confira se o motor está rodando.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setPdfStatus('loading');
+                          setPdfKey((k) => k + 1);
+                        }}
+                        className="brutal-btn px-4 py-2 text-[11px]"
+                      >
+                        Tentar novamente
+                      </button>
+                      <button onClick={handleDownload} className="brutal-btn-yellow px-4 py-2 text-[11px]">
+                        Baixar PDF
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <iframe
+                  key={pdfKey}
+                  src={pdfUrl}
+                  title="Pré-visualização do Currículo"
+                  className="w-full h-full border-none"
+                  onLoad={() => setPdfStatus('ready')}
+                  onError={() => setPdfStatus('error')}
+                />
+              </>
+            )}
           </div>
         </div>
       </div>

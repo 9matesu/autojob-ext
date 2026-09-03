@@ -30,6 +30,15 @@ def get_active() -> dict | None:
     row["profile"] = json.loads(row["profile_json"])
     return row
 
+def deactivate_active() -> bool:
+    """Deactivates the active master profile (e.g. to redo onboarding).
+    History rows are kept. Returns True if there was an active profile."""
+    row = db.query_one("SELECT id FROM candidates WHERE is_active=1 LIMIT 1")
+    if not row:
+        return False
+    db.execute("UPDATE candidates SET is_active=0, updated_at=? WHERE is_active=1", (db.utcnow(),))
+    return True
+
 def save_master_profile(profile: dict, name: str | None = None, email: str | None = None, phone: str | None = None, source_file: str | None = None) -> dict:
     active = get_active()
     now = db.utcnow()

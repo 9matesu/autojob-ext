@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Camera,
-  Monitor,
   Loader2,
   Copy,
   Check,
@@ -11,12 +10,10 @@ import {
 import {
   fetchHealth,
   fetchMasterProfile,
-  adaptImage,
 } from './services/api';
 import type { AppHealth, CandidateProfile, AdaptedResult } from './services/api';
 import {
-  requestCapture,
-  captureVisibleTabPng,
+  startCaptureSelection,
   onCaptureResult,
   saveStudioPayload,
   openStudioTab,
@@ -124,6 +121,10 @@ export function SidePanelApp() {
           setError(m);
           setBusy(false);
           setStatusMsg('');
+        },
+        () => {
+          setBusy(false);
+          setStatusMsg('');
         }
       ),
     []
@@ -134,29 +135,10 @@ export function SidePanelApp() {
     setError('');
     setResult(null);
     try {
-      setStatusMsg('Lendo painel da vaga...');
-      const r = (await requestCapture()) as AdaptedResult;
-      setResult(r);
+      await startCaptureSelection();
+      setStatusMsg('Clique no painel da vaga na pagina... (Esc cancela)');
     } catch (e: any) {
-      setError(e.message || 'Falha na captura');
-    } finally {
-      setBusy(false);
-      setStatusMsg('');
-    }
-  };
-
-  const handleScreenCapture = async () => {
-    setBusy(true);
-    setError('');
-    setResult(null);
-    try {
-      setStatusMsg('Analisando tela visível...');
-      const png = await captureVisibleTabPng();
-      const r = await adaptImage(png);
-      setResult(r);
-    } catch (e: any) {
-      setError(e.message || 'Falha na captura de tela');
-    } finally {
+      setError(e.message || 'Falha ao iniciar a captura');
       setBusy(false);
       setStatusMsg('');
     }
@@ -262,13 +244,8 @@ export function SidePanelApp() {
               <p className="text-[11px] font-mono mt-2 leading-relaxed">
                 {busy
                   ? statusMsg || 'Processando...'
-                  : 'Lê o painel da vaga na aba ativa direto do DOM e adapta seu currículo.'}
+                  : 'Destaca os paineis da pagina: clique no painel da vaga para capturar direto do DOM.'}
               </p>
-            </button>
-
-            <button onClick={handleScreenCapture} disabled={busy} className="brutal-btn w-full py-2 text-[11px] flex items-center justify-center gap-2">
-              <Monitor className="w-3.5 h-3.5" />
-              Capturar Tela Visível
             </button>
 
             {error && (

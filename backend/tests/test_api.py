@@ -125,19 +125,6 @@ def test_polish_bullet():
     assert "polished" in data
     assert len(data["polished"]) > 10
 
-def test_adapt_image(monkeypatch):
-    import base64
-    _use_mock_provider(monkeypatch)
-    client = TestClient(app)
-    test_save_and_get_profile()
-    png_1x1 = base64.b64decode(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
-    )
-    resp = client.post("/api/adapt-image", json={"image_base64": base64.b64encode(png_1x1).decode()})
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["adaptation"]["pdf_url"].startswith("/api/resumes/")
-
 def test_enhanced_resume_parsing(tmp_path):
     client = TestClient(app)
     content = """Carlos Mendes

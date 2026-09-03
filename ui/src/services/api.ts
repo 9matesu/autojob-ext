@@ -184,19 +184,6 @@ export async function adaptText(jobText: string, pageTitle = '', pageUrl = ''): 
   return withAbsolutePdf(await res.json());
 }
 
-export async function adaptImage(dataUrl: string): Promise<AdaptedResult> {
-  const res = await fetch(`${API_BASE}/adapt-image`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image_base64: dataUrl }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Falha ao adaptar vaga a partir da tela');
-  }
-  return withAbsolutePdf(await res.json());
-}
-
 export async function compileResume(payload: {
   profile?: CandidateProfile;
   raw_tex?: string;

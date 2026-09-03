@@ -21,8 +21,8 @@
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["sidePanel", "storage", "activeTab", "tabs"],
-  "host_permissions": ["http://127.0.0.1:8322/*", "<all_urls>"],
+  "permissions": ["sidePanel", "storage", "tabs"],
+  "host_permissions": ["http://127.0.0.1:8322/*"],
   "commands": {
     "capture": {
       "suggested_key": { "default": "Alt+Shift+A" },

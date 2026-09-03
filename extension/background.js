@@ -7,15 +7,20 @@ chrome.commands.onCommand.addListener(async (command) => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
   try {
-    const res = await chrome.tabs.sendMessage(tab.id, { type: "autojob-capture" });
-    chrome.runtime
-      .sendMessage({ type: "autojob-capture-result", payload: res })
-      .catch(() => {});
+    const ack = await chrome.tabs.sendMessage(tab.id, { type: "autojob-capture-start" });
+    if (ack && !ack.ok) {
+      chrome.runtime
+        .sendMessage({
+          type: "autojob-capture-result",
+          payload: { ok: false, error: ack.error || "Falha ao iniciar seleção." },
+        })
+        .catch(() => {});
+    }
   } catch (err) {
     chrome.runtime
       .sendMessage({
         type: "autojob-capture-result",
-        payload: { ok: false, error: String(err?.message || err) },
+        payload: { ok: false, error: "Recarregue a pagina da vaga (F5) e tente de novo." },
       })
       .catch(() => {});
   }

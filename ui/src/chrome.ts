@@ -21,28 +21,31 @@ export async function ensureBackend(): Promise<EnsureBackendResult> {
   }
 }
 
-export async function requestCapture(): Promise<unknown> {
-  if (!isExtension) throw new Error('Captura DOM disponivel apenas dentro da extensao.');
+export async function startCaptureSelection(): Promise<void> {
+  if (!isExtension) throw new Error('Captura disponivel apenas dentro da extensao.');
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) throw new Error('Nenhuma aba ativa encontrada.');
-  const res = await chrome.tabs.sendMessage(tab.id, { type: 'autojob-capture' });
-  if (!res?.ok) throw new Error(res?.error || 'Falha na captura do painel da vaga.');
-  return res.result;
-}
-
-export async function captureVisibleTabPng(): Promise<string> {
-  if (!isExtension) throw new Error('Captura de tela disponivel apenas dentro da extensao.');
-  return chrome.tabs.captureVisibleTab(null as unknown as number, { format: 'png' });
+  let ack: { ok?: boolean; error?: string } | undefined;
+  try {
+    ack = (await chrome.tabs.sendMessage(tab.id, { type: 'autojob-capture-start' })) as
+      | { ok?: boolean; error?: string }
+      | undefined;
+  } catch {
+    throw new Error('Recarregue a pagina da vaga (F5) e tente novamente.');
+  }
+  if (!ack?.ok) throw new Error(ack?.error || 'Falha ao iniciar a selecao do painel.');
 }
 
 export function onCaptureResult(
   onResult: (result: unknown) => void,
-  onError: (message: string) => void
+  onError: (message: string) => void,
+  onCancel: () => void
 ): () => void {
   if (!isExtension) return () => {};
   const listener = (msg: any) => {
     if (msg?.type !== 'autojob-capture-result') return;
     if (msg.payload?.ok) onResult(msg.payload.result);
+    else if (msg.payload?.cancelled) onCancel();
     else onError(String(msg.payload?.error || 'Falha na captura'));
   };
   chrome.runtime.onMessage.addListener(listener);

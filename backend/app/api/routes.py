@@ -1,7 +1,6 @@
 """FastAPI REST routes for AutoJob."""
 from __future__ import annotations
 
-import base64
 import json
 from pathlib import Path
 from fastapi import APIRouter, File, HTTPException, UploadFile, Response
@@ -236,32 +235,6 @@ def adapt_from_text(payload: TextAdaptPayload):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Extração da vaga falhou: {e}")
-    return _run_adapt_pipeline(job_data)
-
-
-class ImageAdaptPayload(BaseModel):
-    image_base64: str
-
-
-@router.post("/adapt-image")
-def adapt_from_image(payload: ImageAdaptPayload):
-    """Vision fallback: PNG data URL of the visible tab captured by the extension."""
-    raw_b64 = payload.image_base64 or ""
-    if raw_b64.startswith("data:"):
-        raw_b64 = raw_b64.split(",", 1)[1] if "," in raw_b64[:200] else raw_b64
-    try:
-        img_bytes = base64.b64decode(raw_b64)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Imagem base64 inválida.")
-    if len(img_bytes) < 40:
-        raise HTTPException(status_code=400, detail="Imagem vazia ou corrompida.")
-    s = get_settings()
-    try:
-        job_data = vision.extract_job_from_image(img_bytes, s)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Extração visual falhou: {e}")
     return _run_adapt_pipeline(job_data)
 
 

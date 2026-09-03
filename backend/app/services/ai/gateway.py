@@ -287,19 +287,19 @@ def _mock_adapt(profile: dict, job: dict, lang: str = "pt") -> dict:
         key=lambda e: sum(1 for w in exp_text(e).split() if w in hay),
         reverse=True,
     )
-    title = job.get("title", "the position")
-    company = job.get("company", "your company")
     name = profile.get("personal", {}).get("name", "Professional")
     if lang == "en":
-        lead = f"{name} applying for {title} at {company}. "
-        pitch = f"Hi! I noticed the {title} opening at {company}. Given my background in {', '.join(ordered_skills[:3])}, I would love to connect and discuss how I can contribute."
+        lead = f"{name} applying for {job.get('title', 'the position')} at {job.get('company', 'your company')}. "
     else:
-        lead = f"{name}, candidatando-se à vaga de {title} na {company}. "
-        pitch = f"Olá! Vi a oportunidade para {title} na {company}. Com minha experiência em {', '.join(ordered_skills[:3])}, adoraria me conectar para falar sobre o papel."
+        lead = f"{name}, candidatando-se à vaga de {job.get('title', 'a posição')} na {job.get('company', 'empresa')}. "
     summary = (lead + (profile.get("summary") or "")).strip()
+
+    job_terms = [str(k).lower() for k in (job.get("keywords") or [])]
+    applied_keywords = [skill_text(sk) for sk in ordered_skills if skill_text(sk).lower() in job_terms]
+    coverage = (len(applied_keywords) / len(job_terms)) if job_terms else 0.5
     return {
-        "match_score": 93.5,
-        "recruiter_pitch": pitch,
+        "match_score": round(40.0 + 60.0 * min(1.0, coverage), 1),
+        "applied_keywords": applied_keywords,
         "summary": summary[:600],
         "skills": ordered_skills,
         "experience": exp,

@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   Download,
-  Copy,
-  Check,
   Loader2,
 } from 'lucide-react';
 import { fetchHistory, resumePdfUrl } from '../../services/api';
@@ -10,7 +8,6 @@ import { fetchHistory, resumePdfUrl } from '../../services/api';
 export const ApplicationHistory: React.FC = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const loadHistory = async () => {
     try {
@@ -28,12 +25,6 @@ export const ApplicationHistory: React.FC = () => {
     loadHistory();
   }, []);
 
-  const handleCopyPitch = async (id: string, pitch: string) => {
-    await navigator.clipboard.writeText(pitch);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2500);
-  };
-
   return (
     <div className="max-w-5xl mx-auto p-6 select-none overflow-y-auto h-full">
       <div className="flex items-end justify-between mb-6 hairline-b pb-4">
@@ -42,7 +33,7 @@ export const ApplicationHistory: React.FC = () => {
             Histórico de Candidaturas & Exportações
           </h1>
           <p className="text-xs text-neutral-600 mt-2 font-mono">
-            Currículos adaptados em LaTeX e mensagens de contato geradas anteriormente.
+            Currículos adaptados em LaTeX gerados a partir do seu perfil mestre.
           </p>
         </div>
       </div>
@@ -83,22 +74,16 @@ export const ApplicationHistory: React.FC = () => {
                   {new Date(item.created_at).toLocaleDateString('pt-BR')}
                 </td>
                 <td className="py-3 text-right whitespace-nowrap">
-                  <span className="brutal-tag brutal-tag-yellow">
-                    {item.match_score ? item.match_score.toFixed(0) : '92'}%
-                  </span>
+                  {item.match_score > 0 ? (
+                    <span className="brutal-tag brutal-tag-yellow">
+                      {item.match_score.toFixed(0)}%
+                    </span>
+                  ) : (
+                    <span className="text-neutral-400">—</span>
+                  )}
                 </td>
                 <td className="py-3 text-right whitespace-nowrap">
                   <div className="inline-flex items-center gap-2">
-                    {item.recruiter_pitch && (
-                      <button
-                        onClick={() => handleCopyPitch(item.id, item.recruiter_pitch)}
-                        className="brutal-btn flex items-center gap-1 px-3 py-1 text-[11px]"
-                      >
-                        {copiedId === item.id ? <Check className="w-3 h-3 stroke-[3]" /> : <Copy className="w-3 h-3" />}
-                        <span>{copiedId === item.id ? 'Copiado!' : 'Copiar Pitch'}</span>
-                      </button>
-                    )}
-
                     <a
                       href={resumePdfUrl(item.id)}
                       download={`Curriculo_${item.company}_${item.title}.pdf`}

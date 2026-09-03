@@ -26,19 +26,27 @@ HARD RULES:
    relevant experience, prioritize matching skills, adjust keywords that the
    candidate actually possesses, condense, and improve wording of EXISTING
    descriptions.
-4. Output strict JSON matching the requested schema. No markdown, no prose.
+4. The deliverable is the resume, not a cover message. Report match_score
+   honestly and list only applied_keywords the candidate genuinely supports.
+5. Output strict JSON matching the requested schema. No markdown, no prose.
 """
 
-ADAPT_SCHEMA_HINT = """Return JSON with exactly these keys:
+ADAPT_SCHEMA_HINT = """The deliverable is the customized resume itself, built strictly from
+CANDIDATE DATA. Return JSON with exactly these keys:
 {
-  "summary": string (2-4 sentences, tailored to this job),
-  "skills": array (candidate's skills, most relevant first),
+  "summary": string (2-4 sentences, tailored to this job, facts only),
+  "skills": array (candidate's skills, most relevant to the job first),
   "experience": array of the candidate's experience objects, reordered and
      with "description" fields improved (same facts, better wording),
+  "projects": array (candidate's projects reordered by relevance to the job),
   "education": array (unchanged),
-  "projects": array (reordered by relevance),
   "certifications": array (unchanged),
-  "languages": array (unchanged)
+  "languages": array (unchanged),
+  "match_score": number 0-100 (honest ATS fit of this candidate to this job;
+     do not inflate; base it on how many job requirements the candidate meets),
+  "applied_keywords": array of strings (job keywords that are genuinely
+     reflected in the adapted resume because the candidate really has them;
+     never list keywords the candidate lacks)
 }"""
 
 LANGUAGE_RULE = """LANGUAGE RULE:

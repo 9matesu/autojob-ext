@@ -1,67 +1,43 @@
 # AutoJob Studio — Chrome Extension
 
 Adapta seu currículo em LaTeX para qualquer vaga, direto do navegador.
-O detector de painel lê o DOM da página da vaga (sem screenshot), envia o texto
-para o motor local, que extrai os dados com IA, adapta seu perfil mestre,
-compila o PDF em LaTeX e registra no histórico.
+O detector lê o **DOM do painel da vaga que você clicou** (sem screenshot),
+envia o texto ao motor local, que extrai os dados com IA, customiza o
+**currículo base do onboarding**, compila o PDF em LaTeX e registra no histórico.
 
-## Arquitetura
+Documentação completa (arquitetura, fluxo, permissões, troubleshooting):
+**[docs/EXTENSAO.md](docs/EXTENSAO.md)**.
 
-- `extension/` — extensão Chrome (Manifest V3): painel lateral + content script detector.
-- `ui/` — app React (Vite + Tailwind) que compila para `extension/` (sidepanel.html, studio.html).
-- `backend/` — motor FastAPI local: IA (Gemini/OpenAI/OpenRouter/Ollama/Mock), importação de
-  currículo (PDF/DOCX/TXT/MD/TeX), compilação LaTeX (Tectonic), histórico SQLite.
+## Setup rápido
 
-## Executar
+```powershell
+# 1. Motor local (venv + deps na primeira vez)
+.\start-backend.ps1
 
-1. Backend (uma vez, ou sempre que quiser):
-   ```powershell
-   .\start-backend.ps1
-   ```
-   (cria o venv na primeira execução; requer Python 3.11+)
-2. UI:
-   ```powershell
-   cd ui
-   npm install
-   npm run build
-   ```
-3. Chrome: `chrome://extensions` → ativar "Modo do desenvolvedor" →
-   "Carregar sem compactação" → selecionar a pasta `extension/`.
-4. Auto-start do backend ao abrir o painel (uma vez):
-   ```powershell
-   .\native-host\install-host.ps1
-   ```
-   Compila o host de native messaging (`AutoJobHost.exe`), registra-o no
-   registro do usuário e vincula à ID fixa da extensão. Depois disso, abrir o
-   painel lateral inicia o motor automaticamente se a porta 8322 estiver livre.
-5. Clique no ícone da extensão para abrir o painel lateral.
+# 2. Interface da extensão
+cd ui
+npm install
+npm run build
+
+# 3. Chrome: chrome://extensions → "Modo do desenvolvedor" →
+#    "Carregar sem compactação" → pasta extension/
+
+# 4. (opcional) Backend inicia sozinho ao abrir o painel lateral
+cd ..
+.\native-host\install-host.ps1
+```
 
 ## Uso
 
-- Abra uma vaga (LinkedIn, Gupy, Indeed, Greenhouse...) e clique em
-  **Capturar Vaga** no painel lateral ou pressione `Alt+Shift+A`.
-- O AutoJob destaca o painel detectado em amarelo, extrai o texto do DOM,
-  adapta o currículo e mostra o resultado (match, pitch, PDF).
-- **Abrir Estúdio** edita os bullets, o código LaTeX e recompila o PDF em uma aba.
-- **Arquivo** lista todas as adaptações; **Config** troca provedor/modelo/chave de IA.
-- **Capturar Tela Visível** é o fallback por visão computacional quando o DOM da
-  página não expõe a vaga (ex.: canvas, imagens).
+Abra uma vaga (LinkedIn, Gupy, Indeed, Greenhouse...) → clique no ícone da
+extensão → **Capturar Vaga** → o painel candidato fica destacado em amarelo;
+**clique** para capturar exatamente aquele elemento (`Esc` cancela).
+O resultado traz o match honesto e as palavras-chave aplicadas — baixe o PDF
+ou refine no Estúdio. `Alt+Shift+A` captura direto da aba ativa.
 
-## Onboarding
+## Estrutura
 
-Na primeira execução, o painel pede o currículo base (arraste PDF/DOCX/TXT/MD/TeX),
-mostra o perfil mestre extraído para revisão e configura a IA.
-
-## Desenvolvimento
-
-```powershell
-cd ui
-npm run dev      # http://localhost:5173/sidepanel.html (chrome.* desabilitado fora da extensão)
-npm run build    # gera extension/sidepanel.html, studio.html e assets/
-npm run lint     # oxlint
-```
-
-```powershell
-cd backend
-.venv\Scripts\python -m pytest tests -q
-```
+- `extension/` — extensão MV3 (manifest, background, content script + páginas buildadas)
+- `ui/` — React + Tailwind (painel lateral e aba do Estúdio)
+- `backend/` — FastAPI: IA, importação de currículo, Tectonic/LaTeX, SQLite
+- `native-host/` — auto-start do backend via native messaging

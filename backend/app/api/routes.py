@@ -177,9 +177,14 @@ def _run_adapt_pipeline(job_data: dict) -> dict:
         "summary": adapted_json.get("summary") or master_profile.get("summary", ""),
         "skills": adapted_json.get("skills") or master_profile.get("skills", []),
         "experience": adapted_json.get("experience") or master_profile.get("experience", []),
+        "projects": adapted_json.get("projects") or master_profile.get("projects", []),
     }
-    match_score = float(adapted_json.get("match_score") or 90.0)
-    recruiter_pitch = adapted_json.get("recruiter_pitch") or ""
+    try:
+        match_score = float(adapted_json.get("match_score") or 0.0)
+    except (TypeError, ValueError):
+        match_score = 0.0
+    match_score = max(0.0, min(100.0, match_score))
+    applied_keywords = [str(k) for k in (adapted_json.get("applied_keywords") or [])][:20]
 
     job_rec = job_model.save_job({**job_data, "match_score": match_score})
     batch_label = db.new_id("ext")
@@ -196,7 +201,7 @@ def _run_adapt_pipeline(job_data: dict) -> dict:
         tailored_json=tailored_profile,
         tex_code=gen_result["tex"],
         pdf_path=gen_result["pdf_path"],
-        recruiter_pitch=recruiter_pitch,
+        recruiter_pitch="",
         match_score=match_score,
     )
 
@@ -205,7 +210,7 @@ def _run_adapt_pipeline(job_data: dict) -> dict:
         "adaptation": {
             "id": res_rec["id"],
             "match_score": match_score,
-            "recruiter_pitch": recruiter_pitch,
+            "applied_keywords": applied_keywords,
             "tailored_profile": tailored_profile,
             "tex_code": gen_result["tex"],
             "pdf_url": f"/api/resumes/{res_rec['id']}/pdf",

@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
   Download,
-  Copy,
-  Check,
   RefreshCw,
   FileCode,
   Sliders,
@@ -29,12 +27,10 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
   const [profile, setProfile] = useState<CandidateProfile>(adaptedData.adaptation.tailored_profile);
   const [rawTex, setRawTex] = useState(adaptedData.adaptation.tex_code);
   const [pdfUrl, setPdfUrl] = useState(adaptedData.adaptation.pdf_url);
-  const [recruiterPitch, setRecruiterPitch] = useState(adaptedData.adaptation.recruiter_pitch);
   const [matchScore] = useState(adaptedData.adaptation.match_score);
 
   const [compiling, setCompiling] = useState(false);
   const [polishingIndex, setPolishingIndex] = useState<{ expIdx: number; bIdx: number } | null>(null);
-  const [copiedPitch, setCopiedPitch] = useState(false);
   const [newSkill, setNewSkill] = useState('');
 
   // Recompile PDF
@@ -74,12 +70,6 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
     }
   };
 
-  const handleCopyPitch = async () => {
-    await navigator.clipboard.writeText(recruiterPitch);
-    setCopiedPitch(true);
-    setTimeout(() => setCopiedPitch(false), 2500);
-  };
-
   const handleDownload = () => {
     const a = document.createElement('a');
     a.href = pdfUrl;
@@ -113,9 +103,11 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="brutal-tag brutal-tag-yellow">
-              {matchScore.toFixed(0)}% Compatibilidade
-            </span>
+            {matchScore > 0 && (
+              <span className="brutal-tag brutal-tag-yellow">
+                {matchScore.toFixed(0)}% Compatibilidade
+              </span>
+            )}
 
             {/* Mode Toggle */}
             <div className="flex border-2 border-black text-xs font-bold uppercase">
@@ -141,26 +133,6 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {activeTab === 'visual' ? (
             <>
-              {/* Recruiter Pitch Box */}
-              <div className="brutal-card p-4">
-                <div className="flex items-center justify-between text-xs mb-1.5 font-bold uppercase">
-                  <span>Mensagem para o Recrutador (LinkedIn):</span>
-                  <button
-                    onClick={handleCopyPitch}
-                    className="flex items-center gap-1 underline underline-offset-4 hover:bg-black hover:text-white px-1 py-0.5 transition-colors cursor-pointer"
-                  >
-                    {copiedPitch ? <Check className="w-3 h-3 stroke-[3]" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedPitch ? 'Copiado!' : 'Copiar Pitch'}</span>
-                  </button>
-                </div>
-                <textarea
-                  rows={2}
-                  value={recruiterPitch}
-                  onChange={(e) => setRecruiterPitch(e.target.value)}
-                  className="brutal-input leading-relaxed"
-                />
-              </div>
-
               {/* Summary Section */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-wider block">
@@ -319,14 +291,6 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
           </span>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleCopyPitch}
-              className="brutal-btn flex items-center gap-1.5 px-3 py-1.5 text-[11px]"
-            >
-              {copiedPitch ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedPitch ? 'Copiado!' : 'Copiar Pitch'}</span>
-            </button>
-
             <button
               onClick={handleDownload}
               className="brutal-btn-yellow flex items-center gap-1.5 px-4 py-1.5 text-[11px]"

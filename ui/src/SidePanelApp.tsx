@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Camera,
   Loader2,
-  Copy,
-  Check,
   Download,
   Maximize2,
 } from 'lucide-react';
@@ -41,7 +39,6 @@ export function SidePanelApp() {
   const [statusMsg, setStatusMsg] = useState('');
   const [error, setError] = useState('');
   const [result, setResult] = useState<AdaptedResult | null>(null);
-  const [copied, setCopied] = useState(false);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState('');
   const autoEnsured = useRef(false);
@@ -142,13 +139,6 @@ export function SidePanelApp() {
       setBusy(false);
       setStatusMsg('');
     }
-  };
-
-  const handleCopyPitch = async () => {
-    if (!result?.adaptation.recruiter_pitch) return;
-    await navigator.clipboard.writeText(result.adaptation.recruiter_pitch);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
   };
 
   const openStudio = async () => {
@@ -265,21 +255,21 @@ export function SidePanelApp() {
                       {result.job.location ? ` — ${result.job.location}` : ''}
                     </p>
                   </div>
-                  <span className="brutal-tag brutal-tag-yellow shrink-0">
-                    {result.adaptation.match_score.toFixed(0)}%
-                  </span>
+                  {result.adaptation.match_score > 0 && (
+                    <span className="brutal-tag brutal-tag-yellow shrink-0">
+                      {result.adaptation.match_score.toFixed(0)}%
+                    </span>
+                  )}
                 </div>
 
-                {result.adaptation.recruiter_pitch && (
+                {result.adaptation.applied_keywords.length > 0 && (
                   <div className="hairline-b pb-3">
-                    <div className="flex items-center justify-between text-[10px] font-bold uppercase mb-1">
-                      <span>Mensagem para o Recrutador:</span>
-                      <button onClick={handleCopyPitch} className="underline underline-offset-2 hover:bg-black hover:text-white px-1 cursor-pointer flex items-center gap-1">
-                        {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                        {copied ? 'Copiado' : 'Copiar'}
-                      </button>
+                    <div className="text-[10px] font-bold uppercase mb-1.5">Palavras-chave aplicadas</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {result.adaptation.applied_keywords.map((k) => (
+                        <span key={k} className="brutal-tag">{k}</span>
+                      ))}
                     </div>
-                    <p className="text-[11px] font-mono leading-relaxed">"{result.adaptation.recruiter_pitch}"</p>
                   </div>
                 )}
 
@@ -287,12 +277,12 @@ export function SidePanelApp() {
                   <a
                     href={result.adaptation.pdf_url}
                     download={`Curriculo_${result.job.company.replace(/\s+/g, '_')}.pdf`}
-                    className="brutal-btn flex items-center justify-center gap-1.5 px-2 py-2 text-[11px]"
+                    className="brutal-btn-yellow flex items-center justify-center gap-1.5 px-2 py-2 text-[11px]"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Baixar PDF
                   </a>
-                  <button onClick={openStudio} className="brutal-btn-yellow flex items-center justify-center gap-1.5 px-2 py-2 text-[11px]">
+                  <button onClick={openStudio} className="brutal-btn flex items-center justify-center gap-1.5 px-2 py-2 text-[11px]">
                     <Maximize2 className="w-3.5 h-3.5" />
                     Abrir Estúdio
                   </button>

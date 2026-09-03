@@ -57,7 +57,7 @@ export interface AdaptedResult {
   adaptation: {
     id: string;
     match_score: number;
-    recruiter_pitch: string;
+    applied_keywords: string[];
     tailored_profile: CandidateProfile;
     tex_code: string;
     pdf_url: string;

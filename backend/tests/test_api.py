@@ -102,10 +102,13 @@ def test_adapt_text(monkeypatch):
     data = resp.json()
     assert "job" in data
     assert "adaptation" in data
-    assert data["adaptation"]["match_score"] > 0
-    assert data["adaptation"]["pdf_url"].startswith("/api/resumes/")
+    adaptation = data["adaptation"]
+    assert 0 < adaptation["match_score"] <= 100
+    assert "applied_keywords" in adaptation
+    assert "recruiter_pitch" not in adaptation
+    assert adaptation["pdf_url"].startswith("/api/resumes/")
 
-    pdf_resp = client.get(data["adaptation"]["pdf_url"])
+    pdf_resp = client.get(adaptation["pdf_url"])
     assert pdf_resp.status_code == 200
     assert pdf_resp.content.startswith(b"%PDF-")
 

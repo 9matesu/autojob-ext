@@ -153,7 +153,7 @@ def parse_resume_from_path(payload: ParsePathPayload):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse resume: {e}")
 
-def _run_adapt_pipeline(job_data: dict) -> dict:
+def _run_adapt_pipeline(job_data: dict, captured_chars: int | None = None) -> dict:
     """Shared pipeline: adapt master profile against job, compile LaTeX, save history."""
     cand = profile_model.get_active()
     if not cand:
@@ -207,6 +207,7 @@ def _run_adapt_pipeline(job_data: dict) -> dict:
 
     return {
         "job": {**job_data, "id": job_rec["id"]},
+        "captured_chars": captured_chars,
         "adaptation": {
             "id": res_rec["id"],
             "match_score": match_score,
@@ -240,7 +241,7 @@ def adapt_from_text(payload: TextAdaptPayload):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Extração da vaga falhou: {e}")
-    return _run_adapt_pipeline(job_data)
+    return _run_adapt_pipeline(job_data, captured_chars=len(payload.job_text))
 
 
 @router.post("/adapt-job")

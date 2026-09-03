@@ -133,7 +133,7 @@ export function SidePanelApp() {
     setResult(null);
     try {
       await startCaptureSelection();
-      setStatusMsg('Clique no painel da vaga na pagina... (Esc cancela)');
+      setStatusMsg('Clique no painel → confira a prévia → CAPTURAR (Esc cancela)');
     } catch (e: any) {
       setError(e.message || 'Falha ao iniciar a captura');
       setBusy(false);
@@ -234,7 +234,7 @@ export function SidePanelApp() {
               <p className="text-[11px] font-mono mt-2 leading-relaxed">
                 {busy
                   ? statusMsg || 'Processando...'
-                  : 'Destaca os paineis da pagina: clique no painel da vaga para capturar direto do DOM.'}
+                  : 'Destaca os paineis da pagina: clique para ver a prévia e confirmar a captura.'}
               </p>
             </button>
 
@@ -254,6 +254,11 @@ export function SidePanelApp() {
                       {result.job.company}
                       {result.job.location ? ` — ${result.job.location}` : ''}
                     </p>
+                    {result.captured_chars != null && result.captured_chars > 0 && (
+                      <p className="text-[10px] font-mono text-neutral-400 mt-0.5">
+                        texto capturado: ~{result.captured_chars >= 1000 ? `${(result.captured_chars / 1000).toFixed(1).replace('.', ',')}k` : result.captured_chars} chars
+                      </p>
+                    )}
                   </div>
                   {result.adaptation.match_score != null && result.adaptation.match_score > 0 && (
                     <span className="brutal-tag brutal-tag-yellow shrink-0">

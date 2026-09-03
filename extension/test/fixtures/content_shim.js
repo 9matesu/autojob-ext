@@ -1,3 +1,5 @@
+var chrome = { runtime: { sendMessage: function(m){ window.__reports.push(m.payload); return Promise.resolve(); } } };
+window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body)); return Promise.resolve({ ok: true, json: async function(){ return { fake: true }; } }); };
 (() => {
   const BACKEND = "http://127.0.0.1:8322";
   const HOST = (location.hostname || "").toLowerCase();
@@ -410,12 +412,5 @@
     document.addEventListener("keydown", onKey, true);
     loop();
   }
-
-  if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
-    chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-      if (msg && msg.type === "autojob-capture-start") {
-        startSelection(sendResponse);
-      }
-    });
-  }
+window.__start = startSelection;
 })();

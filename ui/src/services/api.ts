@@ -54,6 +54,7 @@ export interface JobData {
 
 export interface AdaptedResult {
   job: JobData;
+  captured_chars?: number | null;
   adaptation: {
     id: string;
     match_score: number | null;

@@ -54,11 +54,19 @@ O entregável é sempre o currículo customizado.
 2. **Captura** — na página da vaga, clique em "Capturar Vaga" no painel ou
    `Alt+Shift+A`. O content script entra em **modo de seleção**: destaca em
    amarelo o painel candidato (pré-destaca o de maior pontuação; mover o
-   mouse troca o alvo). Um clique captura o `innerText` daquele elemento
-   específico. `Esc` cancela.
-3. **Extração da vaga** — o texto bruto vai para `POST /api/adapt-text`.
+   mouse troca o alvo; o selo mostra `~N chars · M termos` do texto já
+   limpo). Um clique abre o **toast de prévia** (primeiras linhas +
+   contagem) com `CAPTURAR` / `ESCOLHER OUTRO`. Enter confirma, Esc volta
+   à seleção (Esc de novo cancela tudo).
+   Antes de enviar, o texto passa por poda de ruído: `nav/header/footer/
+   aside`, banners de cookie, promos de cursos, vagas relacionadas e
+   rails laterais são removidos — resolve casos como cards de
+   "cybersegurança" contaminando a vaga.
+3. **Extração da vaga** — o texto limpo vai para `POST /api/adapt-text`.
    O LLM devolve JSON estruturado (título, empresa, local, requisitos,
-   keywords) sem inventar nada.
+   keywords) usando **só a vaga principal** (cursos/promos/vagas relacionadas
+   são ignorados por instrução explícita) e sem inventar nada. A resposta
+   traz `captured_chars`, exibido no card do painel.
 4. **Adaptação** — o LLM recebe o perfil mestre + a vaga e devolve o
    currículo customizado: resumo reescrito para o papel, habilidades e
    experiências reordenadas/reescritas (**mesmos fatos, outra ênfase**),
@@ -92,8 +100,9 @@ O entregável é sempre o currículo customizado.
 
 | Ação | Como |
 | --- | --- |
-| Capturar vaga | Painel → "Capturar Vaga" → clique no painel destacado (ou `Alt+Shift+A`) |
-| Cancelar seleção | `Esc` na página |
+| Capturar vaga | Painel → "Capturar Vaga" → clique no painel → confira a prévia → `CAPTURAR` (ou `Alt+Shift+A`) |
+| Escolher outro painel | botão `ESCOLHER OUTRO` no toast (volta à seleção) |
+| Cancelar seleção | `Esc` no toast volta à seleção; `Esc` na seleção cancela |
 | Editar antes de baixar | Resultado → "Abrir Estúdio" (aba: editor Visual/LaTeX + preview PDF + recompilar) |
 | Versões anteriores | Painel → "Arquivo" → Baixar PDF |
 | Trocar IA/chave/modelo | Painel → "Config" |
@@ -126,6 +135,7 @@ navegação; o único conteúdo lido é o texto do painel que **você** clicou.
 | "Recarregue a página da vaga (F5)" | content script não injetado (aba aberta antes de instalar/recarregar a extensão) |
 | "Nenhum painel de vaga detectado" | página exige rolagem prévia ou a vaga está em iframe cross-origin (limitação conhecida) |
 | Painel errado destacado | apenas mova o mouse sobre o painel correto antes de clicar |
+| Texto com assunto estranho (ex.: curso aleatório) | era ruído da página (rail/promo); o toast de prévia existe para isso — cancele e clique no painel certo. Se persistir, relate o site: seletores vivem na tabela `SITE_ROOTS` em `extension/content.js` |
 | "Motor Offline" persistente | rode `.\start-backend.ps1`; confira `backend/data/autojob-backend.log`; reinstale o host se o auto-start falhar |
 | Match aparece como "—" | o provedor não devolveu `match_score`; o valor nunca é inventado |
 | Porta 8322 ocupada por outro processo | encerre-o ou ajuste `port` em `native-host/autojob-host.json` e `ui/src/chrome.ts` |
@@ -143,6 +153,12 @@ npm run lint       # oxlint
 cd backend
 .venv\Scripts\python -m pytest tests -q
 ```
+
+Fixturas de seleção ficam em `extension/test/fixtures/` (LinkedIn/Indeed/Gupy-like,
+com nav, cookie banner, promos e rails de ruído). `extension/test/build_shim.py`
+gera o `content_shim.js` que permite dirigir o `content.js` real pelo console:
+`__start` → mousemove/click → toast → `CAPTURAR`/`ESCOLHER OUTRO`/Enter/Esc,
+com asserts de que o texto postado exclui o ruído.
 
 Estrutura: `ui/src/chrome.ts` isola toda a API do Chrome com guards para o
 app funcionar como página comum em dev. `extension/content.js` é estático

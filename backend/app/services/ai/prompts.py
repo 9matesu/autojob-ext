@@ -117,8 +117,14 @@ def build_job_from_text_request(job_text: str, page_title: str = "", page_url: s
     }, ensure_ascii=False)
     system = (
         "You are an expert job description analyzer and structured information extractor. "
-        "Extract the job posting from raw page text captured from a browser. "
-        "Disregard navigation menus, cookie banners, ads, and footer noise. "
+        "Extract ONLY the main job posting from raw page text captured from a browser. "
+        "Disregard navigation menus, cookie banners, login walls, share buttons, "
+        "site chrome, footers, and ads. "
+        "Also ignore unrelated promos: online courses and certifications cards, "
+        "related/other vacancies sidebars, and recommended content — even when "
+        "they use job-like vocabulary. "
+        "If the text mixes several postings, extract the first/main coherent "
+        "posting as one job; never merge two different jobs into one. "
         "Never invent facts; use empty strings when a field is unknown. "
         + JOB_TEXT_SCHEMA_HINT
     )

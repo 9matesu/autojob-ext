@@ -3,6 +3,24 @@ export const BACKEND = 'http://127.0.0.1:8322';
 export const isExtension =
   typeof chrome !== 'undefined' && !!chrome.runtime?.id;
 
+export interface EnsureBackendResult {
+  running?: boolean;
+  spawned?: boolean;
+  error?: string;
+}
+
+export async function ensureBackend(): Promise<EnsureBackendResult> {
+  if (!isExtension) return { running: false, error: 'Fora da extensao.' };
+  try {
+    const res = (await chrome.runtime.sendNativeMessage('com.autojob.host', {
+      action: 'ensure-backend',
+    })) as EnsureBackendResult;
+    return res || { running: false, error: 'Host sem resposta.' };
+  } catch (err: any) {
+    return { running: false, error: String(err?.message || err) };
+  }
+}
+
 export async function requestCapture(): Promise<unknown> {
   if (!isExtension) throw new Error('Captura DOM disponivel apenas dentro da extensao.');
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

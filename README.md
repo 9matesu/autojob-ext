@@ -14,7 +14,7 @@ compila o PDF em LaTeX e registra no histórico.
 
 ## Executar
 
-1. Backend:
+1. Backend (uma vez, ou sempre que quiser):
    ```powershell
    .\start-backend.ps1
    ```
@@ -27,7 +27,14 @@ compila o PDF em LaTeX e registra no histórico.
    ```
 3. Chrome: `chrome://extensions` → ativar "Modo do desenvolvedor" →
    "Carregar sem compactação" → selecionar a pasta `extension/`.
-4. Clique no ícone da extensão para abrir o painel lateral.
+4. Auto-start do backend ao abrir o painel (uma vez):
+   ```powershell
+   .\native-host\install-host.ps1
+   ```
+   Compila o host de native messaging (`AutoJobHost.exe`), registra-o no
+   registro do usuário e vincula à ID fixa da extensão. Depois disso, abrir o
+   painel lateral inicia o motor automaticamente se a porta 8322 estiver livre.
+5. Clique no ícone da extensão para abrir o painel lateral.
 
 ## Uso
 

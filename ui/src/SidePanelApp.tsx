@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Camera,
   Monitor,
@@ -20,6 +20,8 @@ import {
   onCaptureResult,
   saveStudioPayload,
   openStudioTab,
+  ensureBackend,
+  isExtension,
 } from './chrome';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
 import { ApplicationHistory } from './components/history/ApplicationHistory';
@@ -43,34 +45,71 @@ export function SidePanelApp() {
   const [error, setError] = useState('');
   const [result, setResult] = useState<AdaptedResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState('');
+  const autoEnsured = useRef(false);
 
-  const init = async () => {
-    try {
-      const h = await fetchHealth();
-      setHealth(h);
-      if (h.has_active_candidate) {
-        const p = await fetchMasterProfile();
-        setMasterProfile(p.profile);
-      } else {
-        setMasterProfile(null);
+  const applyHealth = async (h: AppHealth) => {
+    setHealth(h);
+    if (h.has_active_candidate) {
+      const p = await fetchMasterProfile();
+      setMasterProfile(p.profile);
+    } else {
+      setMasterProfile(null);
+    }
+  };
+
+  const pollHealth = async (ms: number): Promise<boolean> => {
+    const deadline = Date.now() + ms;
+    while (Date.now() < deadline) {
+      try {
+        await applyHealth(await fetchHealth());
+        return true;
+      } catch {
+        await new Promise((r) => setTimeout(r, 500));
       }
+    }
+    return false;
+  };
+
+  const startBackend = async () => {
+    setStarting(true);
+    setStartError('');
+    const res = await ensureBackend();
+    const ok = await pollHealth(12000);
+    if (!ok) setStartError(res.error || 'O motor nao respondeu. Execute start-backend.ps1.');
+    setStarting(false);
+    return ok;
+  };
+
+  const init = async (): Promise<boolean> => {
+    try {
+      await applyHealth(await fetchHealth());
+      return true;
     } catch {
       setHealth(null);
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    init();
+    init().then((ok) => {
+      if (!ok && isExtension && !autoEnsured.current) {
+        autoEnsured.current = true;
+        void startBackend();
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     const t = setInterval(() => {
-      if (!busy) init();
+      if (!busy && !starting) init();
     }, 5000);
     return () => clearInterval(t);
-  }, [busy]);
+  }, [busy, starting]);
 
   useEffect(
     () =>
@@ -146,14 +185,25 @@ export function SidePanelApp() {
   }
 
   if (!health) {
+    if (starting) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center gap-3 font-mono text-xs uppercase tracking-wider">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          Iniciando motor local...
+        </div>
+      );
+    }
     return (
       <div className="h-full flex flex-col items-center justify-center p-6 text-center gap-4">
         <h1 className="font-editorial text-3xl">Motor Offline</h1>
         <p className="text-xs font-mono text-neutral-700 leading-relaxed">
           O servidor local do AutoJob não respondeu em http://127.0.0.1:8322.
-          Execute start-backend.ps1 na pasta do projeto e tente novamente.
+          {startError ? ` ${startError}` : ' Execute start-backend.ps1 na pasta do projeto e tente novamente.'}
         </p>
-        <button onClick={init} className="brutal-btn px-4 py-2 text-xs">
+        <button
+          onClick={() => (isExtension ? startBackend() : void init())}
+          className="brutal-btn px-4 py-2 text-xs"
+        >
           Tentar Novamente
         </button>
       </div>

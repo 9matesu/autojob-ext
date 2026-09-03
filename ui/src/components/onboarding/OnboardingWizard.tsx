@@ -95,7 +95,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
   };
 
   const handleTestAi = async () => {
-    if (!aiApiKey && aiProvider !== 'mock') {
+    if (!aiApiKey && aiProvider !== 'ollama') {
       setAiTestResult({ ok: false, message: 'Insira uma chave de API primeiro' });
       return;
     }
@@ -167,54 +167,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
     } catch (err: any) {
       alert('Falha ao salvar perfil: ' + err.message);
     }
-  };
-
-  const loadExampleProfile = () => {
-    setProfile({
-      personal: {
-        name: 'Matheus Costa',
-        email: 'matheus.costa@example.com',
-        phone: '+55 11 98765-4321',
-        location: 'São Paulo, SP - Brasil',
-        linkedin: 'https://linkedin.com/in/matheuscosta',
-        github: 'https://github.com/9matesu',
-        portfolio: 'https://matheus.dev',
-      },
-      summary: 'Engenheiro de Software Senior com mais de 6 anos de experiência desenvolvendo sistemas distribuídos de alta performance, pipelines de automação com IA é aplicações modernas.',
-      experience: [
-        {
-          title: 'Engenheiro de Software Senior',
-          company: 'Nubank',
-          period: '2022 - Atual',
-          description: [
-            'Arquitetei microsserviços orientados a eventos suportando mais de 10 milhões de requisições diarias com latencia p99 inferior a 15ms.',
-            'Liderei a migração de microsserviços criticos para Python assíncrono e Rust, reduzindo custos de computação em 40%.',
-            'Mentorei equipe de 7 engenheiros em padrões de confiabilidade, CI/CD e testes automatizados.',
-          ],
-        },
-        {
-          title: 'Desenvolvedor Backend Pleno',
-          company: 'Mercado Livre',
-          period: '2019 - 2022',
-          description: [
-            'Desenvolveu pipelines distribuídos em Go e Kafka para processamento de catálogo em tempo real.',
-            'Otimizou consultas no PostgreSQL diminuindo o tempo médio de resposta de 180ms para 35ms.',
-          ],
-        },
-      ],
-      education: [
-        {
-          institution: 'Universidade de São Paulo (USP)',
-          degree: 'Bacharelado em Ciência da Computação',
-          year: '2015 - 2019',
-        },
-      ],
-      skills: ['Python', 'Rust', 'TypeScript', 'Go', 'Docker', 'Kubernetes', 'FastAPI', 'React', 'PostgreSQL', 'Kafka', 'CI/CD'],
-      projects: [],
-      certifications: [],
-      languages: [{ name: 'Português (Nativo)' }, { name: 'Inglês (Avançado)' }],
-    });
-    setStep(2);
   };
 
   return (
@@ -292,14 +244,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
                   <span>{uploadError}</span>
                 </div>
               )}
-              <div className="pt-4 border-t border-black/40 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); loadExampleProfile(); }}
-                  className="text-neutral-900 underline underline-offset-4 decoration-black hover:bg-black hover:text-white px-1 py-0.5 transition-colors font-bold cursor-pointer"
-                >
-                  » Carregar Perfil de Exemplo (1-Clique)
-                </button>
+              <div className="pt-4 border-t border-black/40 flex flex-wrap items-center justify-end gap-2 text-xs font-mono">
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setStep(2); }}
@@ -639,7 +584,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
                       setAiProvider(e.target.value);
                       if (e.target.value === 'gemini') setAiModel('gemini-2.0-flash');
                       if (e.target.value === 'openai') setAiModel('gpt-4o-mini');
-                      if (e.target.value === 'mock') setAiModel('mock');
                     }}
                     className="brutal-input"
                   >
@@ -647,11 +591,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
                     <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
                     <option value="openrouter">OpenRouter (Múltiplos Provedores)</option>
                     <option value="ollama">Ollama (Modelo Local Offline)</option>
-                    <option value="mock">Mock Offline (Teste sem chave)</option>
                   </select>
                 </div>
 
-                {aiProvider !== 'mock' && (
+                {aiProvider !== 'ollama' && (
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-wider block mb-1">Chave de API (API Key)</label>
                     <input

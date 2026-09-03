@@ -1,6 +1,8 @@
 """AI Gateway: provider abstraction over OpenAI-compatible chat APIs.
 
-Providers: OpenAICompatible, Ollama, OpenRouter, Mock (offline, deterministic).
+Providers: OpenAICompatible, Ollama, OpenRouter, Anthropic, Groq, Gemini.
+Sem chave de API configurada, os provedores de nuvem levantam AIError —
+nunca há fallback silencioso para dados fabricados.
 Credentials stay server-side; the browser never sees them.
 """
 from __future__ import annotations
@@ -8,7 +10,6 @@ from __future__ import annotations
 import abc
 import base64
 import json
-import time
 
 import httpx
 
@@ -169,205 +170,6 @@ class OpenRouter(OpenAICompatible):
         return super().chat(system, user, expect_json=expect_json)
 
 
-class MockProvider(AIProvider):
-    """Deterministic offline provider for tests and first-run demos.
-
-    Produces a plausible adaptation purely from the candidate profile and the
-    job text — never invents facts (it only reorders/highlights existing ones).
-    """
-
-    name = "mock"
-
-    def chat(self, system: str, user: str, *, expect_json: bool = False) -> str:
-        time.sleep(0.02)  # simulate a little latency
-        try:
-            payload = json.loads(user)
-        except (json.JSONDecodeError, TypeError):
-            payload = {}
-
-        if payload.get("task") == "extract_job":
-            return json.dumps(_mock_extract_job(payload), ensure_ascii=False)
-
-        if "polished" in user.lower() or "bullet" in user.lower():
-            # Extract bullet if inside quotes
-            return json.dumps({
-                "polished": "Architected high-throughput backend APIs, reducing latency by 35% and accelerating cross-functional delivery."
-            })
-
-        profile = payload.get("candidate_profile", {})
-        job = payload.get("job", {})
-        if isinstance(job, str):
-            from .prompts import FENCE, FENCE_END
-            try:
-                inner = job.split(FENCE, 1)[1].rsplit(FENCE_END, 1)[0].strip()
-                job = json.loads(inner)
-            except (IndexError, json.JSONDecodeError):
-                job = {}
-        lang = payload.get("output_language", "pt")
-        task = payload.get("task", "adapt_resume")
-        if task == "adapt_resume":
-            out = _mock_adapt(profile, job, lang)
-        elif task == "write_email":
-            out = _mock_email(profile, job, lang)
-        elif task == "edit_section":
-            out = _mock_edit_section(payload)
-        else:
-            out = {"ok": True}
-        return json.dumps(out, ensure_ascii=False)
-
-    def vision(self, system: str, prompt: str, image_bytes: bytes, mime_type: str = "image/png") -> str:
-        time.sleep(0.05)
-        out = {
-            "title": "Senior Software Engineer",
-            "company": "AutoTech Systems",
-            "location": "Remote",
-            "workplace_type": "remote",
-            "requirements": [
-                "5+ years of software development experience",
-                "Proficiency in Python, TypeScript, and modern desktop frameworks",
-                "Strong knowledge of API architecture and performance optimization"
-            ],
-            "description": "We are seeking a Senior Software Engineer to design, build, and maintain our high-performance desktop and automation workflows.",
-            "keywords": ["Python", "TypeScript", "React", "Tauri", "FastAPI", "LaTeX", "System Architecture"]
-        }
-        return json.dumps(out, ensure_ascii=False)
-
-
-def _mock_extract_job(payload: dict) -> dict:
-    """Deterministic job extraction from raw page text: first meaningful lines
-    become title/company, nothing invented."""
-    text = payload.get("job_text", "") or ""
-    title = ""
-    company = ""
-    for line in text.splitlines():
-        s = line.strip()
-        if len(s) < 3:
-            continue
-        if not title:
-            title = s[:80]
-        elif not company:
-            company = s[:60]
-            break
-    return {
-        "title": title or "Software Engineer",
-        "company": company or "Tech Company",
-        "location": "Remote",
-        "workplace_type": "remote",
-        "requirements": [
-            "Experience with modern web frameworks",
-            "Strong Python skills",
-        ],
-        "description": text[:500].strip() or "Job extracted from page text.",
-        "keywords": ["Python", "React", "FastAPI"],
-    }
-
-
-def _mock_adapt(profile: dict, job: dict, lang: str = "pt") -> dict:
-    """Rule-based adaptation: reorder + reword, never fabricate."""
-    desc = (job.get("description") or "").lower()
-    reqs = [r.lower() for r in job.get("requirements", [])]
-    hay = desc + " " + " ".join(reqs)
-
-    skills = list(profile.get("skills", []))
-
-    def skill_text(s):
-        return s.get("name", s) if isinstance(s, dict) else str(s)
-
-    matched = [s for s in skills if skill_text(s).lower() in hay]
-    rest = [s for s in skills if s not in matched]
-    ordered_skills = matched + rest
-
-    def exp_text(e):
-        desc = e.get("description", "")
-        desc_str = " ".join(desc) if isinstance(desc, list) else str(desc)
-        return f"{desc_str} {e.get('title', '')} {e.get('role', '')}".lower()
-
-    exp = sorted(
-        profile.get("experience", []),
-        key=lambda e: sum(1 for w in exp_text(e).split() if w in hay),
-        reverse=True,
-    )
-    name = profile.get("personal", {}).get("name", "Professional")
-    if lang == "en":
-        lead = f"{name} applying for {job.get('title', 'the position')} at {job.get('company', 'your company')}. "
-    else:
-        lead = f"{name}, candidatando-se à vaga de {job.get('title', 'a posição')} na {job.get('company', 'empresa')}. "
-    summary = (lead + (profile.get("summary") or "")).strip()
-
-    job_terms = [str(k).lower() for k in (job.get("keywords") or [])]
-    applied_keywords = [skill_text(sk) for sk in ordered_skills if skill_text(sk).lower() in job_terms]
-    coverage = (len(applied_keywords) / len(job_terms)) if job_terms else 0.5
-    return {
-        "match_score": round(40.0 + 60.0 * min(1.0, coverage), 1),
-        "applied_keywords": applied_keywords,
-        "summary": summary[:600],
-        "skills": ordered_skills,
-        "experience": exp,
-        "education": profile.get("education", []),
-        "projects": profile.get("projects", []),
-        "certifications": profile.get("certifications", []),
-        "languages": profile.get("languages", []),
-        "notes": "mock provider: content reordered/highlighted, nothing invented",
-    }
-
-
-def _mock_edit_section(payload: dict) -> dict:
-    """Deterministic section edit: reword the current text, never invent facts.
-
-    Applies a light, rule-based rewrite driven by the instruction keywords
-    (objetivo/focado/backend/etc.) and the optional job context.
-    """
-    section = payload.get("section", "summary")
-    current = (payload.get("current_text") or "").strip()
-    instruction = (payload.get("instruction") or "").lower()
-    job = payload.get("job") or {}
-
-    if not current:
-        current = "Profissional com experiência em desenvolvimento de software."
-
-    # If a job is in context, lead with the target role/company.
-    lead = ""
-    if job.get("title"):
-        company = job.get("company") or "a empresa"
-        lead = f"Focado na vaga de {job['title']} na {company}. "
-
-    text = current
-    if "objetiv" in instruction or "curto" in instruction or "resum" in instruction:
-        # tighten: keep first two sentences max
-        parts = [p.strip() for p in text.replace("\n", " ").split(".") if p.strip()]
-        text = ". ".join(parts[:2]) + ("." if parts else "")
-    if "backend" in instruction or "back-end" in instruction:
-        text = text.rstrip(".") + ", com foco em desenvolvimento back-end."
-    if "adapt" in instruction and job.get("title"):
-        text = text.rstrip(".") + f", alinhado aos requisitos de {job['title']}."
-
-    text = (lead + text).strip()
-    if section != "summary":
-        # non-summary sections: return the (possibly unchanged) text as-is;
-        # callers decide whether to parse it as JSON.
-        return {"text": text}
-    return {"text": text}
-
-
-def _mock_email(profile: dict, job: dict, lang: str = "pt") -> dict:
-    name = profile.get("personal", {}).get("name", "Candidate")
-    title = job.get("title", "the position")
-    company = job.get("company", "your company")
-    if lang == "en":
-        return {
-            "subject": f"Application — {title}",
-            "body": (
-                f"Hello,\n\nI would like to apply for the {title} position at {company}.\n\n"
-                f"My resume is attached.\n\nBest regards,\n{name}"
-            ),
-        }
-    return {
-        "subject": f"Candidatura — {title}",
-        "body": (
-            f"Olá,\n\nGostaria de me candidatar à vaga de {title} na {company}.\n\n"
-            f"Meu currículo segue em anexo.\n\nAtenciosamente,\n{name}"
-        ),
-    }
 
 
 class Anthropic(AIProvider):
@@ -383,7 +185,7 @@ class Anthropic(AIProvider):
         if not self.s.ai_base_url:
             self.s.ai_base_url = "https://api.anthropic.com"
         if not self.s.ai_model or self.s.ai_model in (
-                "mock", "local-model", "default"):
+                "local-model", "default"):
             self.s.ai_model = "claude-3-5-haiku-latest"
 
     def _messages_url(self) -> str:
@@ -438,7 +240,7 @@ class Gemini(OpenAICompatible):
             self.s.ai_base_url = (
                 "https://generativelanguage.googleapis.com/v1beta/openai")
         if not self.s.ai_model or self.s.ai_model in (
-                "mock", "local-model", "default"):
+                "local-model", "default"):
             self.s.ai_model = "gemini-2.0-flash"
 
 
@@ -452,7 +254,7 @@ class Groq(OpenAICompatible):
         if not self.s.ai_base_url:
             self.s.ai_base_url = "https://api.groq.com/openai/v1"
         if not self.s.ai_model or self.s.ai_model in (
-                "mock", "local-model", "gpt-4o-mini", "default"):
+                "local-model", "gpt-4o-mini", "default"):
             self.s.ai_model = "openai/gpt-oss-120b"
 
 
@@ -464,12 +266,10 @@ _PROVIDERS = {
     "openrouter": OpenRouter,
     "groq": Groq,
     "gemini": Gemini,
-    "mock": MockProvider,
 }
 
-# Providers the UI/API may connect at runtime (everything except mock).
-CONNECTABLE_PROVIDERS = tuple(sorted(k for k in _PROVIDERS if k != "mock"))
 
+# Provedores de nuvem exigem chave de API; Ollama é local e não exige.
 # Chave de API conectada em runtime: vive SOMENTE na memória do servidor.
 # Nunca é escrita na tabela `settings`, nunca aparece em respostas HTTP.
 # get_provider() a injeta em qualquer provedor que não tenha chave própria,
@@ -486,12 +286,24 @@ def get_runtime_api_key() -> str | None:
     return _runtime_api_key
 
 
+CLOUD_PROVIDERS = ("gemini", "openai", "openrouter", "anthropic", "groq")
+
+
 def get_provider(settings) -> AIProvider:
     if _runtime_api_key and not getattr(settings, "ai_api_key", ""):
         settings.ai_api_key = _runtime_api_key
-    prov_name = (settings.ai_provider or "mock").lower()
-    if prov_name in ("gemini", "openai", "openrouter", "anthropic", "groq") and not getattr(settings, "ai_api_key", ""):
-        return MockProvider(settings)
-    cls = _PROVIDERS.get(prov_name, MockProvider)
+    prov_name = (settings.ai_provider or "").lower()
+    if prov_name in CLOUD_PROVIDERS and not getattr(settings, "ai_api_key", ""):
+        raise AIError(
+            "Nenhuma chave de API configurada. Abra o painel → Config e "
+            "informe sua chave para usar este provedor.",
+            transient=False,
+        )
+    cls = _PROVIDERS.get(prov_name)
+    if cls is None:
+        raise AIError(
+            f"Provedor de IA desconhecido: {prov_name!r}.",
+            transient=False,
+        )
     return cls(settings)
 

@@ -123,8 +123,10 @@ navegação; o único conteúdo lido é o texto do painel que **você** clicou.
 
 - Perfil mestre, API key e histórico: apenas no SQLite local (`backend/data/`).
 - O texto do painel clicado e o perfil vão para o provedor de IA configurado
-  (Gemini/OpenAI/OpenRouter/Ollama local ou Mock offline). Nada é enviado a
-  servidores do AutoJob — não existem.
+  (Gemini/OpenAI/OpenRouter/Ollama local). Sem chave de API, o backend
+  retorna erro explícito em vez de qualquer conteúdo — não existe dado
+  fabricado em nenhum caminho. Nada é enviado a servidores do AutoJob —
+  não existem.
 - O PDF é gerado localmente pelo Tectonic.
 
 ## Troubleshooting

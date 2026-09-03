@@ -94,11 +94,10 @@ export const SettingsPanel: React.FC = () => {
                 <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
                 <option value="openrouter">OpenRouter (Gateway Multimodelo)</option>
                 <option value="ollama">Ollama (Modelo Local Offline)</option>
-                <option value="mock">Mock Offline (Modo de Demonstração sem chave)</option>
               </select>
             </div>
 
-            {aiProvider !== 'mock' && (
+            {aiProvider !== 'ollama' && (
               <div>
                 <label className="text-[10px] font-bold uppercase tracking-wider block mb-1">
                   Chave de API{' '}

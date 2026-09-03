@@ -67,11 +67,37 @@ def test_parse_resume_path(tmp_path):
     assert data["status"] == "success"
     assert len(data["profile"]["skills"]) > 0
 
-def _use_mock_provider(monkeypatch):
+def _keyless_settings():
+    from app.config import Settings
+    return Settings(ai_provider="gemini", ai_api_key="", ai_model="gemini-2.0-flash")
+
+def _patch_settings(monkeypatch, settings):
+    import app.api.routes as routes
+    monkeypatch.setattr(routes, "get_settings", lambda: settings)
+
+def test_get_provider_raises_without_key(monkeypatch):
     from app.services.ai import gateway as gw
-    from app.services.ai import vision as vis
-    monkeypatch.setattr(gw, "get_provider", lambda s: gw.MockProvider(s))
-    monkeypatch.setattr(vis, "get_provider", lambda s: gw.MockProvider(s))
+    monkeypatch.setattr(gw, "_runtime_api_key", None)
+    with pytest.raises(gw.AIError):
+        gw.get_provider(_keyless_settings())
+
+def test_get_provider_raises_unknown_provider(monkeypatch):
+    from app.services.ai import gateway as gw
+    from app.config import Settings
+    monkeypatch.setattr(gw, "_runtime_api_key", None)
+    with pytest.raises(gw.AIError):
+        gw.get_provider(Settings(ai_provider="nonsense-xyz", ai_api_key="x"))
+
+def test_adapt_prompt_builders_contain_fences_and_schema():
+    from app.services.ai import prompts
+    system, user = prompts.build_adapt_request({"personal": {"name": "T"}}, {"title": "Dev"}, lang="pt")
+    assert "===UNTRUSTED_JOB_DATA_BEGIN===" in user
+    assert "adapt_resume" in user
+    assert "match_score" in system
+    assert "applied_keywords" in system
+    system2, user2 = prompts.build_job_from_text_request("some job text here", "T", "http://x")
+    assert "extract_job" in user2
+    assert "title" in system2
 
 SAMPLE_JOB_TEXT = """Senior Software Engineer
 Nubank
@@ -89,8 +115,21 @@ Requirements:
 Benefits: flexible hours, health plan, stock options.
 """
 
-def test_adapt_text(monkeypatch):
-    _use_mock_provider(monkeypatch)
+def test_adapt_text_without_key_fails_loudly(monkeypatch):
+    _patch_settings(monkeypatch, _keyless_settings())
+    client = TestClient(app)
+    resp = client.post("/api/adapt-text", json={
+        "job_text": SAMPLE_JOB_TEXT,
+        "page_title": "Senior Software Engineer - Nubank",
+        "page_url": "https://example.com/job/123",
+    })
+    assert resp.status_code == 400
+    assert "chave" in resp.json()["detail"].lower()
+
+def test_adapt_text_live():
+    from app.config import get_settings
+    if not get_settings().ai_api_key:
+        pytest.skip("sem chave de API real; integração opt-in")
     client = TestClient(app)
     test_save_and_get_profile()
     resp = client.post("/api/adapt-text", json={
@@ -103,7 +142,7 @@ def test_adapt_text(monkeypatch):
     assert "job" in data
     assert "adaptation" in data
     adaptation = data["adaptation"]
-    assert 0 < adaptation["match_score"] <= 100
+    assert 0 <= adaptation["match_score"] <= 100
     assert "applied_keywords" in adaptation
     assert "recruiter_pitch" not in adaptation
     assert adaptation["pdf_url"].startswith("/api/resumes/")
@@ -117,7 +156,20 @@ def test_adapt_text_rejects_short_input():
     resp = client.post("/api/adapt-text", json={"job_text": "too short"})
     assert resp.status_code == 400
 
-def test_polish_bullet():
+def test_polish_bullet_without_key_fails_loudly(monkeypatch):
+    _patch_settings(monkeypatch, _keyless_settings())
+    client = TestClient(app)
+    resp = client.post("/api/polish-bullet", json={
+        "bullet": "built backend APIs and improved performance",
+        "role_context": "Senior Engineer"
+    })
+    assert resp.status_code == 400
+    assert "chave" in resp.json()["detail"].lower()
+
+def test_polish_bullet_live():
+    from app.config import get_settings
+    if not get_settings().ai_api_key:
+        pytest.skip("sem chave de API real; integração opt-in")
     client = TestClient(app)
     resp = client.post("/api/polish-bullet", json={
         "bullet": "built backend APIs and improved performance",

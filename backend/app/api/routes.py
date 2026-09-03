@@ -12,6 +12,7 @@ from ..models import profile as profile_model, job as job_model
 from ..services.resume import importer
 from ..services.latex import engine as latex_engine
 from ..services.ai import gateway, prompts, vision
+from ..services.ai.gateway import AIError
 
 router = APIRouter(prefix="/api")
 
@@ -169,6 +170,8 @@ def _run_adapt_pipeline(job_data: dict, captured_chars: int | None = None) -> di
         adapted_json = gateway.AIProvider._extract_json(adapted_raw)
     except HTTPException:
         raise
+    except AIError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Adaptação de currículo falhou: {e}")
 
@@ -239,6 +242,8 @@ def adapt_from_text(payload: TextAdaptPayload):
         )
     except HTTPException:
         raise
+    except AIError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Extração da vaga falhou: {e}")
     return _run_adapt_pipeline(job_data, captured_chars=len(payload.job_text))
@@ -327,7 +332,10 @@ def compile_resume_endpoint(payload: CompilePayload):
 @router.post("/polish-bullet")
 def polish_bullet_endpoint(payload: PolishBulletPayload):
     s = get_settings()
-    prov = gateway.get_provider(s)
+    try:
+        prov = gateway.get_provider(s)
+    except AIError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     prompt = prompts.POLISH_BULLET_PROMPT.format(
         original_bullet=payload.bullet,
         context=payload.role_context or "Enhance clarity and measurable impact."

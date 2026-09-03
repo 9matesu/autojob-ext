@@ -22,7 +22,7 @@ load_dotenv()
 
 @dataclass
 class Settings:
-    ai_provider: str = "gemini"  # "gemini" | "openai" | "ollama" | "openrouter" | "mock"
+    ai_provider: str = "gemini"  # "gemini" | "openai" | "ollama" | "openrouter" | "anthropic" | "groq"
     ai_model: str = "gemini-2.0-flash"
     ai_api_key: str = ""
     ai_base_url: str = ""

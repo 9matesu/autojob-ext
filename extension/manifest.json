@@ -22,7 +22,7 @@
     }
   ],
   "permissions": ["sidePanel", "storage", "activeTab", "tabs"],
-  "host_permissions": ["http://127.0.0.1:8322/*"],
+  "host_permissions": ["http://127.0.0.1:8322/*", "<all_urls>"],
   "commands": {
     "capture": {
       "suggested_key": { "default": "Alt+Shift+A" },

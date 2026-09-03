@@ -20,7 +20,7 @@
     let bestScore = 0;
     for (const el of candidates) {
       const s = score(el);
-      if (s > bestScore) {
+      if (s >= bestScore) {
         bestScore = s;
         best = el;
       }
@@ -34,6 +34,15 @@
           max = s;
           best = el;
         }
+      }
+    }
+    if (best) {
+      // Prefer the deepest candidate holding nearly all of the best score
+      // (e.g. the <article> panel inside a <main> wrapper).
+      const ref = bestScore;
+      for (const el of candidates) {
+        if (el === best || !best.contains(el)) continue;
+        if (score(el) >= ref * 0.85) best = el;
       }
     }
     return best;

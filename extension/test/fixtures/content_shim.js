@@ -2,175 +2,67 @@ var chrome = { runtime: { sendMessage: function(m){ window.__reports.push(m.payl
 window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body)); return Promise.resolve({ ok: true, json: async function(){ return { fake: true }; } }); };
 (() => {
   const BACKEND = "http://127.0.0.1:8322";
-  const HOST = (location.hostname || "").toLowerCase();
-
-  const KEYWORDS =
-    /(requisitos|responsabilidades|experi[eê]ncia|compet[eê]ncias|benef[ií]cios|sal[aá]rio|contrata|vaga|obrigat[oó]ri|desej[aá]vel|requirements|responsibilities|qualifications|benefits|seniority|years of experience|apply now|full[- ]time|part[- ]time)/gi;
-
-  // Site-specific job-panel roots, tried before the generic heuristics.
-  // Gupy usa classes hash instáveis -> cai no genérico (documentado).
-  const SITE_ROOTS = [
-    { host: /(^|\.)linkedin\.com$/i, sels: [".jobs-description__content", "#job-details"] },
-    { host: /(^|\.)indeed\./i, sels: ["#jobDescriptionText"] },
-    { host: /boards\.greenhouse\.io$/i, sels: ["#content"] },
-    { host: /(^|\.)lever\.co$/i, sels: ["div.content"] },
-  ];
-
-  const NOISE_SEL =
-    "nav, header, footer, aside, form, script, style, noscript, iframe, object, " +
-    "embed, select, input, textarea, video, audio, " +
-    '[role="navigation"], [role="banner"], [role="contentinfo"], ' +
-    '[role="complementary"], [role="search"], [role="dialog"], [aria-hidden="true"]';
-
-  const NOISE_CLASS =
-    /cookie|consent|lgpd|banner|ad[-_]|ads\b|promo|course|curso|related|relacionad|recommend|recomend|similar|suggest|rail|sidebar|aside|menu|share|social|comment|signup|sign-up|signin|login|newsletter|subscribe|overlay|modal|popup|tooltip|toast|breadcrumb|pagination|skip/i;
-
-  function isNoiseNode(n) {
-    if (!(n instanceof HTMLElement)) return false;
-    if (n.hasAttribute("data-autojob")) return true;
-    const s = (typeof n.className === "string" ? n.className : "") + " " + (n.id || "");
-    return NOISE_CLASS.test(s);
-  }
-
-  function pruneNoise(root) {
-    const clone = root.cloneNode(true);
-    clone.querySelectorAll(NOISE_SEL).forEach((n) => n.remove());
-    clone.querySelectorAll("[class], [id]").forEach((n) => {
-      if (isNoiseNode(n)) n.remove();
-    });
-    return clone;
-  }
-
-  function cleanText(el) {
-    const t = (pruneNoise(el).innerText || "").replace(/\s+/g, " ").trim();
-    return t;
-  }
-
-  function countHits(text) {
-    return (text.match(KEYWORDS) || []).length;
-  }
-
-  const scoreCache = new WeakMap();
-  function scoreInfo(el) {
-    if (scoreCache.has(el)) return scoreCache.get(el);
-    const raw = el.innerText || "";
-    const words = (raw.match(/\S+/g) || []).length;
-    let info = { len: 0, hits: 0, density: 0, noise: false, cleanLen: 0, cleanHits: 0 };
-    if (raw.length >= 400) {
-      const hits = countHits(raw);
-      const noise = !!el.querySelector(
-        'nav, header, footer, aside, [role="navigation"], [role="banner"], ' +
-          '[role="contentinfo"], [role="complementary"]'
-      );
-      const cleaned = cleanText(el);
-      info = {
-        len: raw.length,
-        hits,
-        density: hits / Math.max(1, words),
-        noise,
-        cleanLen: cleaned.length,
-        cleanHits: countHits(cleaned),
-      };
-    }
-    scoreCache.set(el, info);
-    return info;
-  }
-
-  function composite(info) {
-    return Math.min(info.len, 20000) + info.hits * 800 - (info.noise ? 4000 : 0);
-  }
-
-  function pushUnique(list, seen, el) {
-    if (el instanceof HTMLElement && !seen.has(el)) {
-      seen.add(el);
-      list.push(el);
-    }
-  }
-
-  function collectCandidates() {
-    const list = [];
-    const seen = new Set();
-    // 1. Raízes específicas do ATS (barra mais baixa: precisão alta).
-    for (const site of SITE_ROOTS) {
-      if (!site.host.test(HOST)) continue;
-      for (const sel of site.sels) {
-        const el = document.querySelector(sel);
-        if (el instanceof HTMLElement && cleanText(el).length >= 150) {
-          pushUnique(list, seen, el);
-        }
-      }
-    }
-    // 2. Heurística genérica.
-    const sel =
-      'article, main, [role="main"], section, div[class*="job"], div[class*="description"], ' +
-      'div[class*="apply"], div[class*="content"], div[id*="Description"], div[id*="job-details"], ' +
-      'div[id*="jobDetails"], div[id*="job-body"]';
-    for (const el of document.querySelectorAll(sel)) {
-      if (scoreInfo(el).len > 0) pushUnique(list, seen, el);
-    }
-    if (!list.length && document.body) {
-      for (const el of document.body.children) {
-        if (el instanceof HTMLElement && scoreInfo(el).len > 0) pushUnique(list, seen, el);
-      }
-    }
-    list.sort((a, b) => composite(scoreInfo(b)) - composite(scoreInfo(a)));
-    return list.slice(0, 40);
-  }
-
-  // Menor candidato contendo o ponto cujo texto limpo seja substancial,
-  // expandido para cima a fim de incluir cabeçalhos (h1/h2) irmãos —
-  // sem ultrapassar 1.6x do tamanho base (anti-balão).
-  function expandToHeaded(el) {
-    const baseLen = Math.max(1, scoreInfo(el).cleanLen);
-    let cur = el;
-    let p = el.parentElement;
-    while (p && p !== document.body && p instanceof HTMLElement) {
-      const h = p.querySelector(":scope > h1, :scope > h2");
-      if (h && h.textContent.trim().length <= 150) {
-        const info = scoreInfo(p);
-        if (info.cleanLen >= 150 && info.cleanLen <= baseLen * 1.6) {
-          cur = p;
-        }
-      }
-      p = p.parentElement;
-    }
-    return cur;
-  }
-
-  function refineToPanel(cands, scope) {
-    let best = null;
-    let bestScore = -1;
-    for (const el of cands) {
-      if (!scope.contains(el)) continue;
-      const info = scoreInfo(el);
-      if (info.cleanLen < 150) continue;
-      const s = info.cleanHits * 1000 + Math.min(info.cleanLen, 20000) - el.querySelectorAll("*").length;
-      if (s > bestScore) {
-        bestScore = s;
-        best = el;
-      }
-    }
-    if (!best) return null;
-    return expandToHeaded(best);
-  }
-
-  function bestOf(cands) {
-    const top = cands[0] || null;
-    if (!top) return null;
-    return refineToPanel(cands, top) || top;
-  }
 
   function fmtCount(n) {
     return n >= 1000 ? (n / 1000).toFixed(1).replace(".", ",").replace(",0", "") + "k" : String(n);
   }
 
+  function isOurs(el) {
+    return el instanceof HTMLElement && el.hasAttribute("data-autojob");
+  }
+
+  // Breadcrumb real do elemento: body > main > article.job-posting
+  function describe(el) {
+    const parts = [];
+    let cur = el;
+    while (cur && cur !== document.documentElement && parts.length < 5) {
+      if (cur instanceof HTMLElement && cur !== document.body) {
+        let s = cur.tagName.toLowerCase();
+        if (cur.id) s += "#" + cur.id;
+        else if (typeof cur.className === "string" && cur.className.trim()) {
+          s += "." + cur.className.trim().split(/\s+/)[0];
+        }
+        parts.unshift(s);
+      }
+      cur = cur.parentElement;
+    }
+    return "body > " + parts.join(" > ");
+  }
+
+  function textOf(el) {
+    return ((el && el.innerText) || "").trim();
+  }
+
+  // Maior bloco de texto visível na viewport — ponto de partida dinâmico,
+  // sem listas hardcoded. Só roda uma vez na entrada do modo.
+  function largestVisibleBlock() {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
+    let best = null;
+    let bestLen = 0;
+    let seen = 0;
+    let node = walker.nextNode();
+    while (node && seen < 2000) {
+      seen++;
+      if (!isOurs(node)) {
+        const r = node.getBoundingClientRect();
+        if (r.width > 40 && r.height > 40 && r.bottom > 0 && r.top < window.innerHeight) {
+          const len = textOf(node).length;
+          if (len > bestLen) {
+            bestLen = len;
+            best = node;
+          }
+        }
+      }
+      node = walker.nextNode();
+    }
+    return bestLen >= 80 ? best : null;
+  }
+
   let state = null;
 
   function labelFor(el) {
-    const info = el ? scoreInfo(el) : null;
-    const n = info ? info.cleanLen : 0;
-    const h = info ? info.cleanHits : 0;
-    return "PAINEL DA VAGA · ~" + fmtCount(n) + " chars · " + h + " termos — CLIQUE PARA PRÉVIA";
+    if (!el) return "SELECIONE O PAINEL · MOUSE DESTACA · ↑/↓ NAVEGA";
+    return describe(el) + " · ~" + fmtCount(textOf(el).length) + " chars — CLIQUE P/ PRÉVIA";
   }
 
   function positionOverlay() {
@@ -194,23 +86,46 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
     state.raf = requestAnimationFrame(loop);
   }
 
+  function pickTarget(x, y) {
+    let el = document.elementFromPoint(x, y);
+    while (el && (isOurs(el) || !(el instanceof HTMLElement))) {
+      el = el.parentElement;
+    }
+    if (el === document.documentElement || el === document.body.parentElement) return null;
+    return el;
+  }
+
+  function setCurrent(el) {
+    if (!el || el === state.current) return;
+    state.current = el;
+    state.stack.push(el);
+    state.hovered = el;
+    positionOverlay();
+  }
+
   function onMouseMove(e) {
     if (!state || state.mode !== "select") return;
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    if (!el) return;
-    let cur = el;
-    while (cur && !state.set.has(cur)) cur = cur.parentElement;
-    if (!cur) return;
-    const refined = refineToPanel(state.cands, cur) || cur;
-    if (refined !== state.hovered) {
-      state.hovered = refined;
-      positionOverlay();
-    }
+    setCurrent(pickTarget(e.clientX, e.clientY));
+  }
+
+  function stepUp() {
+    if (!state || !state.current) return;
+    let p = state.current.parentElement;
+    while (p && (isOurs(p) || !(p instanceof HTMLElement))) p = p.parentElement;
+    if (p && p !== document.documentElement) setCurrent(p);
+  }
+
+  function stepDown() {
+    if (!state || state.stack.length < 2) return;
+    state.stack.pop();
+    const el = state.stack[state.stack.length - 1];
+    state.current = el;
+    state.hovered = el;
+    positionOverlay();
   }
 
   function showToast(target) {
-    const info = scoreInfo(target);
-    const text = cleanText(target);
+    const text = textOf(target);
     const lines = text
       .split(/(?<=[.!?])\s+|\n+/)
       .map((l) => l.trim())
@@ -233,8 +148,7 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
     tag.textContent = "PRÉVIA DA CAPTURA";
     tag.style.cssText = "background:#000;color:#ffff00;padding:2px 8px;font-size:10px;";
     const meta = document.createElement("span");
-    meta.textContent =
-      "· ~" + fmtCount(text.length) + " chars · " + info.cleanHits + " termos";
+    meta.textContent = "· " + describe(target) + " · ~" + fmtCount(text.length) + " chars";
     const spacer = document.createElement("span");
     spacer.style.cssText = "flex:1;";
     const btnCapture = document.createElement("button");
@@ -278,6 +192,19 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
     }
   }
 
+  function showHint() {
+    const hint = document.createElement("div");
+    hint.setAttribute("data-autojob", "hint");
+    hint.textContent = "MOUSE DESTACA · ↑/↓ NAVEGA NA ÁRVORE · CLIQUE OU ENTER = PRÉVIA · ESC SAI";
+    hint.style.cssText =
+      "position:fixed;z-index:2147483647;top:12px;left:50%;transform:translateX(-50%);" +
+      "background:#000;color:#ffff00;border:2px solid #ffff00;" +
+      'font:bold 11px/1.4 "Space Mono",monospace;padding:6px 12px;letter-spacing:0.05em;' +
+      "white-space:nowrap;pointer-events:none;";
+    document.documentElement.appendChild(hint);
+    state.hint = hint;
+  }
+
   function backToSelection() {
     if (!state) return;
     hideToast();
@@ -291,8 +218,8 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
     e.preventDefault();
     e.stopPropagation();
     const target = state.hovered;
-    if (!target) {
-      cancel("Nenhum painel sob o cursor.");
+    if (!target || !document.contains(target)) {
+      cancel("Nenhum elemento sob o cursor.");
       return;
     }
     state.mode = "confirm";
@@ -307,10 +234,24 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
       e.stopPropagation();
       if (state.mode === "confirm") backToSelection();
       else cancel(null);
+    } else if (e.key === "Enter" && state.mode === "select" && state.hovered) {
+      e.preventDefault();
+      e.stopPropagation();
+      state.mode = "confirm";
+      document.documentElement.style.cursor = "";
+      showToast(state.hovered);
     } else if (e.key === "Enter" && state.mode === "confirm" && state.pending) {
       e.preventDefault();
       e.stopPropagation();
       finish(state.pending.el, state.pending.text);
+    } else if (e.key === "ArrowUp" && state.mode === "select") {
+      e.preventDefault();
+      e.stopPropagation();
+      stepUp();
+    } else if (e.key === "ArrowDown" && state.mode === "select") {
+      e.preventDefault();
+      e.stopPropagation();
+      stepDown();
     }
   }
 
@@ -322,6 +263,7 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
     document.removeEventListener("keydown", onKey, true);
     state.overlay.remove();
     if (state.toast) state.toast.remove();
+    if (state.hint) state.hint.remove();
     document.documentElement.style.cursor = state.prevCursor;
     state = null;
   }
@@ -338,10 +280,10 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
   }
 
   async function finish(el, text) {
-    const body = text !== undefined ? text : cleanText(el);
+    const body = (text !== undefined ? text : textOf(el)).trim();
     cleanup();
-    if (body.trim().length < 80) {
-      report({ ok: false, error: "O painel selecionado tem pouco texto para extrair." });
+    if (body.length < 80) {
+      report({ ok: false, error: "O elemento selecionado tem pouco texto para extrair." });
       return;
     }
     try {
@@ -373,11 +315,6 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
       sendResponse({ ok: false, error: "Seleção já em andamento nesta página." });
       return;
     }
-    const cands = collectCandidates();
-    if (!cands.length) {
-      sendResponse({ ok: false, error: "Nenhum painel de vaga detectado nesta página." });
-      return;
-    }
     sendResponse({ ok: true, mode: "selecting" });
 
     const overlay = document.createElement("div");
@@ -397,20 +334,32 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
 
     state = {
       mode: "select",
-      cands,
-      set: new Set(cands),
-      hovered: bestOf(cands),
+      current: null,
+      stack: [],
+      hovered: null,
       overlay,
       label,
       toast: null,
+      hint: null,
       pending: null,
       prevCursor,
       raf: 0,
     };
+    showHint();
     document.addEventListener("mousemove", onMouseMove, true);
     document.addEventListener("click", onClick, true);
     document.addEventListener("keydown", onKey, true);
+    const first = largestVisibleBlock();
+    if (first) setCurrent(first);
     loop();
+  }
+
+  function setCurrent(el) {
+    if (!el || el === state.current) return;
+    state.current = el;
+    state.stack.push(el);
+    state.hovered = el;
+    positionOverlay();
   }
 window.__start = startSelection;
 })();

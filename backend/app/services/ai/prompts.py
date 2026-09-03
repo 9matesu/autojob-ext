@@ -125,6 +125,10 @@ def build_job_from_text_request(job_text: str, page_title: str = "", page_url: s
         "they use job-like vocabulary. "
         "If the text mixes several postings, extract the first/main coherent "
         "posting as one job; never merge two different jobs into one. "
+        "Pay special attention to preference-based recommendation blocks "
+        "('vagas com base nas suas preferências', 'vagas semelhantes', "
+        "'people also viewed', 'jobs based on your preferences'): never treat "
+        "their headings or items as the main posting. "
         "Never invent facts; use empty strings when a field is unknown. "
         + JOB_TEXT_SCHEMA_HINT
     )

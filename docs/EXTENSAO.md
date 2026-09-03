@@ -51,18 +51,17 @@ O entregável é sempre o currículo customizado.
    habilidades). Você revisa e confirma no passo 2 e configura o provedor
    de IA no passo 3. O perfil mestre fica no SQLite local e é a **única
    fonte de fatos** para todas as adaptações.
-2. **Captura** — na página da vaga, clique em "Capturar Vaga" no painel ou
-   `Alt+Shift+A`. O content script entra em **modo de seleção**: destaca em
-   amarelo o painel candidato (pré-destaca o de maior pontuação; mover o
-   mouse troca o alvo; o selo mostra `~N chars · M termos` do texto já
-   limpo). Um clique abre o **toast de prévia** (primeiras linhas +
-   contagem) com `CAPTURAR` / `ESCOLHER OUTRO`. Enter confirma, Esc volta
-   à seleção (Esc de novo cancela tudo).
-   Antes de enviar, o texto passa por poda de ruído: `nav/header/footer/
-   aside`, banners de cookie, promos de cursos, vagas relacionadas e
-   rails laterais são removidos — resolve casos como cards de
-   "cybersegurança" contaminando a vaga.
-3. **Extração da vaga** — o texto limpo vai para `POST /api/adapt-text`.
+2. **Captura (modo inspetor)** — na página da vaga, clique em "Capturar Vaga"
+   no painel ou `Alt+Shift+A`. O content script entra em **modo de seleção**:
+   o mouse destaca exatamente o elemento sob o cursor (outline amarelo), o
+   selo mostra o breadcrumb real (`body > main > article.job-posting`) e a
+   contagem de chars. `↑`/`↓` navegam pai/filho na árvore. Na entrada, o
+   maior bloco de texto visível já vem destacado como ponto de partida
+   (dinâmico, sem listas). Um clique (ou Enter) abre o **toast de prévia**
+   com o texto exato do elemento + `CAPTURAR` / `ESCOLHER OUTRO`. O que
+   aparece no toast é byte a byte o que vai ao backend — sem parser,
+   sem poda, sem heurística no caminho.
+3. **Extração da vaga** — o texto do elemento vai para `POST /api/adapt-text`.
    O LLM devolve JSON estruturado (título, empresa, local, requisitos,
    keywords) usando **só a vaga principal** (cursos/promos/vagas relacionadas
    são ignorados por instrução explícita) e sem inventar nada. A resposta
@@ -133,9 +132,9 @@ navegação; o único conteúdo lido é o texto do painel que **você** clicou.
 | Sintoma | Causa/Solução |
 | --- | --- |
 | "Recarregue a página da vaga (F5)" | content script não injetado (aba aberta antes de instalar/recarregar a extensão) |
-| "Nenhum painel de vaga detectado" | página exige rolagem prévia ou a vaga está em iframe cross-origin (limitação conhecida) |
-| Painel errado destacado | apenas mova o mouse sobre o painel correto antes de clicar |
-| Texto com assunto estranho (ex.: curso aleatório) | era ruído da página (rail/promo); o toast de prévia existe para isso — cancele e clique no painel certo. Se persistir, relate o site: seletores vivem na tabela `SITE_ROOTS` em `extension/content.js` |
+| Seleção não inicia | página exige rolagem prévia ou a vaga está em iframe cross-origin (limitação conhecida) |
+| Elemento errado destacado | o outline mira o elemento exato sob o cursor; use ↑/↓ para ajustar pai/filho |
+| Texto com assunto estranho (ex.: curso aleatório) | você clicou no elemento errado — o toast mostra exatamente o que será enviado; cancele e clique no painel certo |
 | "Motor Offline" persistente | rode `.\start-backend.ps1`; confira `backend/data/autojob-backend.log`; reinstale o host se o auto-start falhar |
 | Match aparece como "—" | o provedor não devolveu `match_score`; o valor nunca é inventado |
 | Porta 8322 ocupada por outro processo | encerre-o ou ajuste `port` em `native-host/autojob-host.json` e `ui/src/chrome.ts` |
@@ -154,11 +153,11 @@ cd backend
 .venv\Scripts\python -m pytest tests -q
 ```
 
-Fixturas de seleção ficam em `extension/test/fixtures/` (LinkedIn/Indeed/Gupy-like,
-com nav, cookie banner, promos e rails de ruído). `extension/test/build_shim.py`
-gera o `content_shim.js` que permite dirigir o `content.js` real pelo console:
-`__start` → mousemove/click → toast → `CAPTURAR`/`ESCOLHER OUTRO`/Enter/Esc,
-com asserts de que o texto postado exclui o ruído.
+Fixturas de seleção ficam em `extension/test/fixtures/` (LinkedIn/Indeed/Gupy-like).
+`extension/test/build_shim.py` gera o `content_shim.js` que permite dirigir o
+`content.js` real pelo console: `__start` → mousemove/click/setas → toast →
+`CAPTURAR`/`ESCOLHER OUTRO`/Enter/Esc, com asserts de que o outline mira o
+elemento exato e o texto postado é byte a byte o `innerText` dele.
 
 Estrutura: `ui/src/chrome.ts` isola toda a API do Chrome com guards para o
 app funcionar como página comum em dev. `extension/content.js` é estático

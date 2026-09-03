@@ -2,6 +2,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
@@ -121,3 +123,41 @@ def test_models_live():
     })
     assert resp.status_code == 200
     assert isinstance(resp.json()["models"], list)
+
+
+def test_json_word_present_in_all_json_mode_prompts(monkeypatch):
+    """Strict OpenAI-compatible providers 400 response_format=json_object
+    unless the word JSON appears in the prompt. Guard every call site."""
+    from app.services.ai import prompts as pr
+    from app.services.ai import gateway as gw
+
+    captured = {}
+
+    class Probe(gw.OpenAICompatible):
+        def _post(self, url, payload, headers, timeout=120.0):
+            captured["payload"] = payload
+            return {"choices": [{"message": {"content": '{"test": "ok"}'}}]}
+
+    # 1. adapt pipeline prompts
+    system, user = pr.build_adapt_request({"personal": {"name": "T"}}, {"title": "Dev"}, lang="pt")
+    assert "json" in (system + user).lower()
+    # 2. job extraction prompts
+    system2, user2 = pr.build_job_from_text_request("texto", "T", "http://x")
+    assert "json" in (system2 + user2).lower()
+    # 3. polish prompt
+    assert "json" in pr.POLISH_BULLET_PROMPT.lower()
+    # 4. connection-test prompt goes through a real chat() call
+    import app.api.routes as routes
+    from app.config import Settings
+    monkeypatch.setattr(routes.gateway, "get_provider", lambda s: Probe(
+        Settings(ai_provider="openai", ai_api_key="x")))
+    resp = client.post("/api/settings/test", json={
+        "ai_provider": "openai",
+        "ai_api_key": "x",
+        "ai_model": "gpt-4o-mini",
+    })
+    assert resp.status_code == 200
+    sent = captured["payload"]
+    assert sent.get("response_format") == {"type": "json_object"}
+    blob = json.dumps(sent["messages"]).lower()
+    assert "json" in blob

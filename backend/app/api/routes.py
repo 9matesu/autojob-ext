@@ -105,7 +105,10 @@ def test_ai_connection(payload: SettingsPayload):
     if payload.ai_base_url: s.ai_base_url = payload.ai_base_url
     try:
         prov = gateway.get_provider(s)
-        resp = prov.chat("You are a helpful assistant.", "Reply with {\"test\": \"ok\"}", expect_json=True)
+        # NB: strict OpenAI-compatible providers reject response_format=json_object
+        # with 400 unless the word "JSON" appears in the prompt.
+        resp = prov.chat("You are a helpful assistant. Always reply with strict JSON.",
+                         "Reply with this exact JSON object: {\"test\": \"ok\"}", expect_json=True)
         return {"status": "success", "response": resp}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

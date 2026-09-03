@@ -125,7 +125,7 @@ export async function saveSettings(settings: Partial<AppSettings & { ai_api_key?
   if (!res.ok) throw new Error('Falha ao salvar configuracoes');
 }
 
-export async function testAiConnection(payload: { ai_provider: string; ai_api_key: string; ai_model?: string }): Promise<{ status: string }> {
+export async function testAiConnection(payload: { ai_provider: string; ai_api_key: string; ai_model?: string; ai_base_url?: string }): Promise<{ status: string }> {
   const res = await fetch(`${API_BASE}/settings/test`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -136,6 +136,49 @@ export async function testAiConnection(payload: { ai_provider: string; ai_api_ke
     throw new Error(err.detail || 'Teste de conexao falhou');
   }
   return res.json();
+}
+
+export interface ProviderInfo {
+  id: string;
+  label: string;
+  needs_key: boolean;
+  default_base_url: string;
+  default_model: string;
+  custom_base: boolean;
+  key_hint: string;
+}
+
+const FALLBACK_PROVIDERS: ProviderInfo[] = [
+  { id: 'gemini', label: 'Google Gemini', needs_key: true, default_base_url: '', default_model: 'gemini-2.0-flash', custom_base: false, key_hint: 'AIzaSy...' },
+  { id: 'openai', label: 'OpenAI', needs_key: true, default_base_url: '', default_model: 'gpt-4o-mini', custom_base: false, key_hint: 'sk-...' },
+  { id: 'ollama', label: 'Ollama (local)', needs_key: false, default_base_url: '', default_model: '', custom_base: true, key_hint: '' },
+  { id: 'openai-compatible', label: 'Customizado (OpenAI-compatible)', needs_key: false, default_base_url: '', default_model: '', custom_base: true, key_hint: '' },
+];
+
+export async function fetchProviders(): Promise<ProviderInfo[]> {
+  try {
+    const res = await fetch(`${API_BASE}/providers`);
+    if (!res.ok) throw new Error('fallback');
+    const data = await res.json();
+    if (!Array.isArray(data.providers) || data.providers.length === 0) throw new Error('fallback');
+    return data.providers as ProviderInfo[];
+  } catch {
+    return FALLBACK_PROVIDERS;
+  }
+}
+
+export async function detectModels(payload: { ai_provider: string; ai_api_key?: string; ai_base_url?: string }): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/models`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Falha ao listar modelos');
+  }
+  const data = await res.json();
+  return Array.isArray(data.models) ? (data.models as string[]) : [];
 }
 
 export async function fetchMasterProfile(): Promise<{ has_profile: boolean; profile: CandidateProfile }> {

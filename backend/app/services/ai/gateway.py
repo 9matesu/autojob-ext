@@ -47,6 +47,29 @@ class AIProvider(abc.ABC):
         return self.chat(system, user, expect_json=expect_json)
 
     # -- shared helpers -------------------------------------------------
+    def _get(self, url: str, headers: dict, timeout: float = 30.0) -> dict:
+        try:
+            resp = httpx.get(url, headers=headers, timeout=timeout)
+        except httpx.TimeoutException as e:
+            raise AIError(f"AI request timed out: {e}", transient=True) from e
+        except httpx.HTTPError as e:
+            raise AIError(f"AI network error: {e}", transient=True) from e
+        if resp.status_code == 429:
+            raise AIError("AI rate limited (429)", transient=True)
+        if resp.status_code >= 500:
+            raise AIError(f"AI server error ({resp.status_code})", transient=True)
+        if resp.status_code >= 400:
+            raise AIError(f"AI client error ({resp.status_code}): {resp.text[:300]}",
+                          transient=False)
+        try:
+            return resp.json()
+        except ValueError as e:
+            raise AIError("AI returned non-JSON output", transient=False) from e
+
+    def models(self) -> list[str]:
+        """Model IDs available on this provider. Never fabricates: returns
+        what the provider API lists, or [] when listing is unsupported."""
+        return []
     def _post(self, url: str, payload: dict, headers: dict, timeout: float = 120.0) -> dict:
         try:
             resp = httpx.post(url, json=payload, headers=headers, timeout=timeout)
@@ -137,11 +160,30 @@ class OpenAICompatible(AIProvider):
         data = self._post(f"{base}/chat/completions", payload, headers)
         return data["choices"][0]["message"]["content"]
 
+    def models(self) -> list[str]:
+        base = (self.s.ai_base_url or "https://api.openai.com/v1").rstrip("/")
+        headers: dict = {}
+        if getattr(self.s, "ai_api_key", ""):
+            headers = {"Authorization": f"Bearer {self.s.ai_api_key}"}
+        data = self._get(f"{base}/models", headers)
+        items = data.get("data", [])
+        ids = [m.get("id", "") for m in items if isinstance(m, dict) and m.get("id")]
+        return sorted(set(ids))
+
 
 class Ollama(OpenAICompatible):
     """Ollama exposes an OpenAI-compatible API at /v1."""
 
     name = "ollama"
+
+    def _native_base(self) -> str:
+        return (self.s.ai_base_url or "http://localhost:11434/v1").rstrip("/").removesuffix("/v1")
+
+    def models(self) -> list[str]:
+        data = self._get(f"{self._native_base()}/api/tags", {})
+        items = data.get("models", [])
+        names = [m.get("name", "") for m in items if isinstance(m, dict) and m.get("name")]
+        return sorted(set(names))
 
     def chat(self, system: str, user: str, *, expect_json: bool = False) -> str:
         if not self.s.ai_base_url:
@@ -228,6 +270,15 @@ class Anthropic(AIProvider):
         data = self._post(self._messages_url(), payload, self._headers())
         return self._parse(data)
 
+    def models(self) -> list[str]:
+        base = (self.s.ai_base_url or "https://api.anthropic.com").rstrip("/")
+        if base.endswith("/v1"):
+            base = base[:-3]
+        data = self._get(f"{base}/v1/models", self._headers())
+        items = data.get("data", [])
+        ids = [m.get("id", "") for m in items if isinstance(m, dict) and m.get("id")]
+        return sorted(set(ids))
+
 
 class Gemini(OpenAICompatible):
     """Google Gemini via the OpenAI-compatible endpoint (free AI Studio key)."""
@@ -266,7 +317,67 @@ _PROVIDERS = {
     "openrouter": OpenRouter,
     "groq": Groq,
     "gemini": Gemini,
+    "nvidia": OpenAICompatible,
+    "deepseek": OpenAICompatible,
+    "xai": OpenAICompatible,
+    "together": OpenAICompatible,
+    "mistral": OpenAICompatible,
 }
+
+
+# Catálogo exibido pela UI. Fonte única de verdade sobre provedores:
+# id (usado em ai_provider) -> rótulo, se exige chave, base URL e modelo padrão.
+# "custom_base" mostra o campo de URL base na UI. "key_hint" é só placeholder.
+PROVIDER_CATALOG = [
+    {"id": "gemini", "label": "Google Gemini", "needs_key": True,
+     "default_base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+     "default_model": "gemini-2.0-flash", "custom_base": False,
+     "key_hint": "AIzaSy..."},
+    {"id": "openai", "label": "OpenAI", "needs_key": True,
+     "default_base_url": "https://api.openai.com/v1",
+     "default_model": "gpt-4o-mini", "custom_base": False,
+     "key_hint": "sk-..."},
+    {"id": "anthropic", "label": "Anthropic Claude", "needs_key": True,
+     "default_base_url": "https://api.anthropic.com",
+     "default_model": "claude-3-5-haiku-latest", "custom_base": False,
+     "key_hint": "sk-ant-..."},
+    {"id": "groq", "label": "Groq", "needs_key": True,
+     "default_base_url": "https://api.groq.com/openai/v1",
+     "default_model": "llama-3.3-70b-versatile", "custom_base": False,
+     "key_hint": "gsk_..."},
+    {"id": "openrouter", "label": "OpenRouter", "needs_key": True,
+     "default_base_url": "https://openrouter.ai/api/v1",
+     "default_model": "", "custom_base": False,
+     "key_hint": "sk-or-..."},
+    {"id": "nvidia", "label": "NVIDIA NIM", "needs_key": True,
+     "default_base_url": "https://integrate.api.nvidia.com/v1",
+     "default_model": "meta/llama-3.3-70b-instruct", "custom_base": False,
+     "key_hint": "nvapi-..."},
+    {"id": "deepseek", "label": "DeepSeek", "needs_key": True,
+     "default_base_url": "https://api.deepseek.com/v1",
+     "default_model": "deepseek-chat", "custom_base": False,
+     "key_hint": "sk-..."},
+    {"id": "xai", "label": "xAI (Grok)", "needs_key": True,
+     "default_base_url": "https://api.x.ai/v1",
+     "default_model": "grok-2-1212", "custom_base": False,
+     "key_hint": "xai-..."},
+    {"id": "together", "label": "Together AI", "needs_key": True,
+     "default_base_url": "https://api.together.xyz/v1",
+     "default_model": "meta-llama/Llama-3.3-70b-Instruct-Turbo", "custom_base": False,
+     "key_hint": "..."},
+    {"id": "mistral", "label": "Mistral AI", "needs_key": True,
+     "default_base_url": "https://api.mistral.ai/v1",
+     "default_model": "mistral-small-latest", "custom_base": False,
+     "key_hint": "..."},
+    {"id": "ollama", "label": "Ollama (local)", "needs_key": False,
+     "default_base_url": "http://localhost:11434/v1",
+     "default_model": "", "custom_base": True,
+     "key_hint": ""},
+    {"id": "openai-compatible", "label": "Customizado (OpenAI-compatible)", "needs_key": False,
+     "default_base_url": "",
+     "default_model": "", "custom_base": True,
+     "key_hint": ""},
+]
 
 
 # Provedores de nuvem exigem chave de API; Ollama é local e não exige.
@@ -286,7 +397,8 @@ def get_runtime_api_key() -> str | None:
     return _runtime_api_key
 
 
-CLOUD_PROVIDERS = ("gemini", "openai", "openrouter", "anthropic", "groq")
+CLOUD_PROVIDERS = ("gemini", "openai", "openrouter", "anthropic", "groq",
+                     "nvidia", "deepseek", "xai", "together", "mistral")
 
 
 def get_provider(settings) -> AIProvider:

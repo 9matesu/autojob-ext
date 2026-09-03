@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Loader2,
   Plus,
@@ -11,8 +11,11 @@ import {
   saveMasterProfile,
   saveSettings,
   testAiConnection,
+  fetchProviders,
+  type ProviderInfo,
 } from '../../services/api';
 import type { CandidateProfile, AppHealth } from '../../services/api';
+import { AiProviderFields } from '../settings/AiProviderFields';
 
 interface OnboardingWizardProps {
   onComplete: () => void;
@@ -57,9 +60,15 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
   const [aiProvider, setAiProvider] = useState(health.ai_provider || 'gemini');
   const [aiApiKey, setAiApiKey] = useState('');
   const [aiModel, setAiModel] = useState(health.ai_model || 'gemini-2.0-flash');
+  const [aiBaseUrl, setAiBaseUrl] = useState('');
+  const [catalog, setCatalog] = useState<ProviderInfo[]>([]);
   const [testingAi, setTestingAi] = useState(false);
   const [aiTestResult, setAiTestResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [newSkill, setNewSkill] = useState('');
+
+  useEffect(() => {
+    fetchProviders().then(setCatalog).catch(() => {});
+  }, []);
 
   const processFile = async (file: File) => {
     setUploading(true);
@@ -95,7 +104,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
   };
 
   const handleTestAi = async () => {
-    if (!aiApiKey && aiProvider !== 'ollama') {
+    const entry = catalog.find((p) => p.id === aiProvider);
+    if (!aiApiKey && (entry ? entry.needs_key : aiProvider !== 'ollama')) {
       setAiTestResult({ ok: false, message: 'Insira uma chave de API primeiro' });
       return;
     }
@@ -106,6 +116,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
         ai_provider: aiProvider,
         ai_api_key: aiApiKey,
         ai_model: aiModel,
+        ...(aiBaseUrl ? { ai_base_url: aiBaseUrl } : {}),
       });
       setAiTestResult({ ok: true, message: 'Conexão bem-sucedida. Modelo IA pronto.' });
     } catch (err: any) {
@@ -162,6 +173,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
         ai_provider: aiProvider,
         ai_model: aiModel,
         ...(aiApiKey ? { ai_api_key: aiApiKey } : {}),
+        ...(aiBaseUrl ? { ai_base_url: aiBaseUrl } : {}),
       });
       onComplete();
     } catch (err: any) {
@@ -576,50 +588,22 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
               </p>
 
               <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider block mb-1">Provedor de IA</label>
-                  <select
-                    value={aiProvider}
-                    onChange={(e: any) => {
-                      setAiProvider(e.target.value);
-                      if (e.target.value === 'gemini') setAiModel('gemini-2.0-flash');
-                      if (e.target.value === 'openai') setAiModel('gpt-4o-mini');
-                    }}
-                    className="brutal-input"
-                  >
-                    <option value="gemini">Google Gemini (Recomendado — Gemini 2.0 Flash)</option>
-                    <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
-                    <option value="openrouter">OpenRouter (Múltiplos Provedores)</option>
-                    <option value="ollama">Ollama (Modelo Local Offline)</option>
-                  </select>
-                </div>
-
-                {aiProvider !== 'ollama' && (
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider block mb-1">Chave de API (API Key)</label>
-                    <input
-                      type="password"
-                      value={aiApiKey}
-                      onChange={(e) => setAiApiKey(e.target.value)}
-                      placeholder={aiProvider === 'gemini' ? 'AIzaSy...' : 'sk-...'}
-                      className="brutal-input"
-                    />
-                    <p className="text-[11px] text-neutral-500 mt-1 font-mono">
-                      Sua chave é armazenada apenas no banco SQLite local do motor.
-                    </p>
-                  </div>
-                )}
-
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider block mb-1">Nome do Modelo</label>
-                  <input
-                    type="text"
-                    value={aiModel}
-                    onChange={(e) => setAiModel(e.target.value)}
-                    placeholder="Ex: gemini-2.0-flash"
-                    className="brutal-input"
-                  />
-                </div>
+                <AiProviderFields
+                  catalog={catalog}
+                  provider={aiProvider}
+                  model={aiModel}
+                  apiKey={aiApiKey}
+                  baseUrl={aiBaseUrl}
+                  onProviderChange={setAiProvider}
+                  onModelChange={setAiModel}
+                  onApiKeyChange={setAiApiKey}
+                  onBaseUrlChange={setAiBaseUrl}
+                  keyHint={
+                    <span className="text-neutral-500 normal-case tracking-normal">
+                      (armazenada apenas no SQLite local)
+                    </span>
+                  }
+                />
 
                 <button
                   type="button"

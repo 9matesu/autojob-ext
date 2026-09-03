@@ -110,6 +110,35 @@ def test_ai_connection(payload: SettingsPayload):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.get("/providers")
+def list_providers():
+    """Provider catalog (single source of truth for the UI). No secrets."""
+    return {"providers": gateway.PROVIDER_CATALOG}
+
+@router.post("/models")
+def list_models(payload: SettingsPayload):
+    """List model IDs available on a provider using the given credentials.
+
+    Uses a transient settings object — nothing is persisted. Returns exactly
+    what the provider API lists; never fabricates. Empty list + 200 when the
+    provider has no listing endpoint; 400 with a clear message otherwise.
+    """
+    from ..config import Settings
+    s = Settings(
+        ai_provider=payload.ai_provider or "gemini",
+        ai_api_key=payload.ai_api_key or "",
+        ai_base_url=payload.ai_base_url or "",
+        ai_model=payload.ai_model or "",
+    )
+    try:
+        prov = gateway.get_provider(s)
+        models = prov.models()
+        return {"models": models, "count": len(models)}
+    except AIError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/profile")
 def get_master_profile():
     cand = profile_model.get_active()

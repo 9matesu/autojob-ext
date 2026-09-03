@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { fetchSettings, saveSettings, testAiConnection } from '../../services/api';
+import { fetchSettings, saveSettings, testAiConnection, fetchProviders, type ProviderInfo } from '../../services/api';
 import type { AppSettings } from '../../services/api';
+import { AiProviderFields } from './AiProviderFields';
 
 export const SettingsPanel: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [catalog, setCatalog] = useState<ProviderInfo[]>([]);
   const [aiProvider, setAiProvider] = useState('gemini');
   const [aiModel, setAiModel] = useState('gemini-2.0-flash');
   const [aiApiKey, setAiApiKey] = useState('');
+  const [aiBaseUrl, setAiBaseUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -17,10 +20,12 @@ export const SettingsPanel: React.FC = () => {
   const load = async () => {
     try {
       setLoading(true);
-      const data = await fetchSettings();
+      const [data, provs] = await Promise.all([fetchSettings(), fetchProviders()]);
       setSettings(data);
+      setCatalog(provs);
       setAiProvider(data.ai_provider);
       setAiModel(data.ai_model);
+      setAiBaseUrl(data.ai_base_url || '');
     } catch (err) {
       console.error(err);
     } finally {
@@ -40,6 +45,7 @@ export const SettingsPanel: React.FC = () => {
         ai_provider: aiProvider,
         ai_api_key: aiApiKey,
         ai_model: aiModel,
+        ...(aiBaseUrl ? { ai_base_url: aiBaseUrl } : {}),
       });
       setTestResult({ ok: true, message: 'Conexão com a IA verificada com sucesso.' });
     } catch (err: any) {
@@ -56,6 +62,7 @@ export const SettingsPanel: React.FC = () => {
         ai_provider: aiProvider,
         ai_model: aiModel,
         ...(aiApiKey ? { ai_api_key: aiApiKey } : {}),
+        ...(aiBaseUrl ? { ai_base_url: aiBaseUrl } : {}),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -79,53 +86,24 @@ export const SettingsPanel: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4 text-xs">
-            <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider block mb-1">Provedor de IA</label>
-              <select
-                value={aiProvider}
-                onChange={(e) => {
-                  setAiProvider(e.target.value);
-                  if (e.target.value === 'gemini') setAiModel('gemini-2.0-flash');
-                  if (e.target.value === 'openai') setAiModel('gpt-4o-mini');
-                }}
-                className="brutal-input cursor-pointer"
-              >
-                <option value="gemini">Google Gemini (Recomendado — Visão ultra-rápida)</option>
-                <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
-                <option value="openrouter">OpenRouter (Gateway Multimodelo)</option>
-                <option value="ollama">Ollama (Modelo Local Offline)</option>
-              </select>
-            </div>
-
-            {aiProvider !== 'ollama' && (
-              <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider block mb-1">
-                  Chave de API{' '}
-                  {settings?.has_key && (
-                    <span className="text-neutral-500 normal-case tracking-normal">
-                      (Configurada: {settings.ai_api_key_masked})
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="password"
-                  value={aiApiKey}
-                  onChange={(e) => setAiApiKey(e.target.value)}
-                  placeholder={settings?.has_key ? 'Insira nova chave para substituir' : 'Insira a Chave de API'}
-                  className="brutal-input"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider block mb-1">Nome do Modelo</label>
-              <input
-                type="text"
-                value={aiModel}
-                onChange={(e) => setAiModel(e.target.value)}
-                className="brutal-input"
-              />
-            </div>
+            <AiProviderFields
+              catalog={catalog}
+              provider={aiProvider}
+              model={aiModel}
+              apiKey={aiApiKey}
+              baseUrl={aiBaseUrl}
+              onProviderChange={setAiProvider}
+              onModelChange={setAiModel}
+              onApiKeyChange={setAiApiKey}
+              onBaseUrlChange={setAiBaseUrl}
+              keyHint={
+                settings?.has_key ? (
+                  <span className="text-neutral-500 normal-case tracking-normal">
+                    (Configurada: {settings.ai_api_key_masked})
+                  </span>
+                ) : undefined
+              }
+            />
 
             {/* Test connection */}
             <div className="pt-1">

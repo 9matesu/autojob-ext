@@ -15,6 +15,7 @@ EMPTY_PROFILE = {
         "portfolio": "",
     },
     "summary": "",
+    "leadership": [],
     "experience": [],
     "education": [],
     "skills": [],

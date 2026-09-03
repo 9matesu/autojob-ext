@@ -53,6 +53,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
     },
     summary: '',
     experience: [],
+    leadership: [],
     education: [],
     skills: [],
   });
@@ -158,14 +159,30 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
       education: [
         ...profile.education,
         {
-          institution: 'Universidade de São Paulo (USP)',
-          degree: 'Bacharelado em Ciência da Computação',
-          year: '2020',
+          institution: '',
+          degree: '',
+          year: '',
+          location: '',
         },
       ],
     });
   };
 
+  const handleAddLeadership = () => {
+    setProfile({
+      ...profile,
+      leadership: [
+        ...(profile.leadership || []),
+        {
+          title: '',
+          company: '',
+          location: '',
+          period: '',
+          description: [],
+        },
+      ],
+    });
+  };
   const handleFinish = async () => {
     try {
       await saveMasterProfile(profile);
@@ -415,6 +432,20 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
                           className="brutal-input"
                         />
                       </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-neutral-600 block mb-0.5">Local</label>
+                        <input
+                          type="text"
+                          value={exp.location || ''}
+                          onChange={(e) => {
+                            const updated = [...profile.experience];
+                            updated[idx].location = e.target.value;
+                            setProfile({ ...profile, experience: updated });
+                          }}
+                          placeholder="Ex: São Paulo, SP / Remoto"
+                          className="brutal-input"
+                        />
+                      </div>
                     </div>
 
                     <div className="space-y-1.5 mt-2">
@@ -467,7 +498,135 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
 
             <section>
               <div className="flex items-center justify-between mb-3">
-                <SectionLabel index="04" title={`Formação Acadêmica (${profile.education.length})`} />
+                <SectionLabel index="04" title={`Atividades de Liderança (${(profile.leadership || []).length})`} />
+                <button type="button" onClick={handleAddLeadership} className="brutal-btn flex items-center gap-1.5 px-3 py-1.5 text-[10px]">
+                  <Plus className="w-3.5 h-3.5" />
+                  Adicionar Atividade
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {(profile.leadership || []).map((lead, idx) => (
+                  <div key={idx} className="brutal-card p-4 relative">
+                    <button
+                      type="button"
+                      onClick={() => setProfile({ ...profile, leadership: (profile.leadership || []).filter((_, i) => i !== idx) })}
+                      className="absolute top-4 right-4 text-neutral-500 hover:bg-black hover:text-white transition-colors cursor-pointer p-1"
+                      title="Remover atividade"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 pr-8">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-neutral-600 block mb-0.5">Cargo / Posição</label>
+                        <input
+                          type="text"
+                          value={lead.title}
+                          onChange={(e) => {
+                            const updated = [...(profile.leadership || [])];
+                            updated[idx].title = e.target.value;
+                            setProfile({ ...profile, leadership: updated });
+                          }}
+                          placeholder="Ex: Líder de Capítulo"
+                          className="brutal-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-neutral-600 block mb-0.5">Organização</label>
+                        <input
+                          type="text"
+                          value={lead.company}
+                          onChange={(e) => {
+                            const updated = [...(profile.leadership || [])];
+                            updated[idx].company = e.target.value;
+                            setProfile({ ...profile, leadership: updated });
+                          }}
+                          placeholder="Ex: Liga de IA"
+                          className="brutal-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-neutral-600 block mb-0.5">Periodo / Datas</label>
+                        <input
+                          type="text"
+                          value={lead.period || ''}
+                          onChange={(e) => {
+                            const updated = [...(profile.leadership || [])];
+                            updated[idx].period = e.target.value;
+                            setProfile({ ...profile, leadership: updated });
+                          }}
+                          placeholder="Ex: 2023 - Atual"
+                          className="brutal-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-neutral-600 block mb-0.5">Local</label>
+                        <input
+                          type="text"
+                          value={lead.location || ''}
+                          onChange={(e) => {
+                            const updated = [...(profile.leadership || [])];
+                            updated[idx].location = e.target.value;
+                            setProfile({ ...profile, leadership: updated });
+                          }}
+                          placeholder="Ex: Remoto"
+                          className="brutal-input"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 mt-2">
+                      <label className="text-[10px] font-bold uppercase text-neutral-600">
+                        Impacto e Responsabilidades (Bullets):
+                      </label>
+                      {lead.description.map((bullet, bIdx) => (
+                        <div key={bIdx} className="flex items-center gap-2">
+                          <span className="font-bold">—</span>
+                          <input
+                            type="text"
+                            value={bullet}
+                            onChange={(e) => {
+                              const updated = [...(profile.leadership || [])];
+                              updated[idx].description[bIdx] = e.target.value;
+                              setProfile({ ...profile, leadership: updated });
+                            }}
+                            className="brutal-input flex-1"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...(profile.leadership || [])];
+                              updated[idx].description = updated[idx].description.filter((_, i) => i !== bIdx);
+                              setProfile({ ...profile, leadership: updated });
+                            }}
+                            className="text-neutral-500 hover:bg-black hover:text-white cursor-pointer p-1.5 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = [...(profile.leadership || [])];
+                          updated[idx].description.push('Novo item de impacto...');
+                          setProfile({ ...profile, leadership: updated });
+                        }}
+                        className="text-xs font-bold underline underline-offset-4 mt-1 inline-flex items-center gap-1 cursor-pointer hover:bg-black hover:text-white transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Adicionar item de impacto
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <SectionLabel index="05" title={`Formação Acadêmica (${profile.education.length})`} />
                 <button type="button" onClick={handleAddEducation} className="brutal-btn flex items-center gap-1.5 px-3 py-1.5 text-[10px]">
                   <Plus className="w-3.5 h-3.5" />
                   Adicionar Formação
@@ -527,6 +686,20 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
                           className="brutal-input"
                         />
                       </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-neutral-600 block mb-0.5">Local</label>
+                        <input
+                          type="text"
+                          value={edu.location || ''}
+                          onChange={(e) => {
+                            const updated = [...profile.education];
+                            updated[idx].location = e.target.value;
+                            setProfile({ ...profile, education: updated });
+                          }}
+                          placeholder="Ex: São Paulo, SP"
+                          className="brutal-input"
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -534,7 +707,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
             </section>
 
             <section>
-              <SectionLabel index="05" title={`Inventário de Habilidades (${profile.skills.length})`} />
+              <SectionLabel index="06" title={`Inventário de Habilidades (${profile.skills.length})`} />
               <div className="flex flex-wrap gap-2 mb-3">
                 {profile.skills.map((skill) => (
                   <span key={skill} className="brutal-tag">
@@ -582,7 +755,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
         <main className="flex-grow overflow-y-auto px-4 py-6">
           <div className="max-w-xl mx-auto space-y-6">
             <section>
-              <SectionLabel index="06" title="Provedor de Inteligencia Artificial" />
+              <SectionLabel index="07" title="Provedor de Inteligencia Artificial" />
               <p className="text-xs text-neutral-600 font-mono -mt-1 mb-3">
                 Selecione o modelo que irá analisar as páginas de vaga e adaptar os currículos.
               </p>

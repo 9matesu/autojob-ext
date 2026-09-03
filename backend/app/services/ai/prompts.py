@@ -38,6 +38,8 @@ CANDIDATE DATA. Return JSON with exactly these keys:
   "skills": array (candidate's skills, most relevant to the job first),
   "experience": array of the candidate's experience objects, reordered and
      with "description" fields improved (same facts, better wording),
+  "leadership": array of the candidate's leadership/volunteer entries,
+     reordered by relevance (same facts, better wording),
   "projects": array (candidate's projects reordered by relevance to the job),
   "education": array (unchanged),
   "certifications": array (unchanged),

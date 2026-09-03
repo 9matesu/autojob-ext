@@ -166,6 +166,8 @@ def normalize_resume(resume: dict) -> dict:
         r[key] = as_named(r.get(key))
     r["experience"] = [e if isinstance(e, dict) else {"role": str(e)}
                        for e in (r.get("experience") or [])]
+    r["leadership"] = [e if isinstance(e, dict) else {"role": str(e)}
+                       for e in (r.get("leadership") or [])]
     r["education"] = [e if isinstance(e, dict) else {"institution": str(e)}
                       for e in (r.get("education") or [])]
     r["personal"] = r.get("personal") or {}

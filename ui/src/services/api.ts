@@ -26,12 +26,14 @@ export interface EducationItem {
   degree?: string;
   field?: string;
   year?: string;
+  location?: string;
 }
 
 export interface CandidateProfile {
   personal: PersonalInfo;
   summary: string;
   experience: ExperienceItem[];
+  leadership?: ExperienceItem[];
   education: EducationItem[];
   skills: string[];
   projects?: Array<{ name: string; description?: string }>;

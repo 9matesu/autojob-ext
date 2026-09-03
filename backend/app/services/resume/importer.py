@@ -10,6 +10,10 @@ from pathlib import Path
 from ...models.profile import EMPTY_PROFILE
 
 SECTION_ALIASES = {
+    "leadership": ("leadership", "leadership activities", "volunteer",
+                   "volunteering", "volunteer experience", "liderança",
+                   "atividades de liderança", "voluntariado",
+                   "trabalho voluntário"),
     "experience": ("experience", "work experience", "professional experience",
                    "employment", "experiência profissional", "experiência",
                    "histórico profissional"),
@@ -70,23 +74,64 @@ def _extract_dates(line: str) -> tuple[str, str]:
             return cleaned, period
     return line, ""
 
-def _parse_job_header(line: str) -> tuple[str, str, str]:
-    """Parses a candidate job header into (title, company, period)."""
+def _parse_job_header(line: str) -> tuple[str, str, str, str]:
+    """Parses a candidate job header into (title, company, period, location)."""
     cleaned_line, period = _extract_dates(line)
+    cleaned_line, location = _extract_location(cleaned_line)
 
     delims = [" | ", " - ", " – ", " — ", " at ", " em ", " @ "]
     for d in delims:
         if d in cleaned_line:
             parts = [p.strip() for p in cleaned_line.split(d) if p.strip()]
             if len(parts) >= 2:
-                return parts[0], parts[1], period
+                title, comp = parts[0], parts[1]
+                if not location and len(parts) >= 3 and _looks_like_location(parts[-1]):
+                    location = parts[-1]
+                return title, comp, period, location
 
     if "," in cleaned_line:
         parts = [p.strip() for p in cleaned_line.split(",") if p.strip()]
         if len(parts) >= 2:
-            return parts[0], parts[1], period
+            if not location and _looks_like_location(parts[-1]):
+                return ", ".join(parts[:-1]), "", period, parts[-1]
+            return parts[0], parts[1], period, location
 
-    return cleaned_line.strip(), "", period
+    return cleaned_line.strip(), "", period, location
+
+
+_REMOTE_WORDS = ("remot", "remote", "híbrido", "hybrid", "presencial", "on-site", "onsite")
+
+_LOCATION_RE = re.compile(
+    r"[A-ZÀ-Ú][\wà-ú.]+(?:\s+[A-ZÀ-Ú][\wà-ú.]+){0,3}\s*,\s*(?:[A-Z]{2}|[A-ZÀ-Ú][a-zà-ú]+)"
+)
+
+
+def _looks_like_location(text: str) -> bool:
+    t = text.strip()
+    if not t:
+        return False
+    low = t.lower()
+    if any(w in low for w in _REMOTE_WORDS):
+        return True
+    return bool(_LOCATION_RE.search(t))
+
+
+def _extract_location(line: str) -> tuple[str, str]:
+    """Removes a trailing location chunk ("São Paulo, SP", "Remoto") from a
+    header line. Returns (rest, location)."""
+    m = _LOCATION_RE.search(line)
+    if m:
+        loc = m.group(0).strip(" ,|•–—-\t")
+        rest = (line[:m.start()] + " " + line[m.end():]).strip(" ,|•–—-\t")
+        return rest, loc
+    low = line.lower()
+    for w in _REMOTE_WORDS:
+        m2 = re.search(r"\b" + w + r"\w*\b", line, re.IGNORECASE)
+        if m2:
+            loc = m2.group(0).strip()
+            rest = (line[:m2.start()] + " " + line[m2.end():]).strip(" ,|•–—-\t")
+            return rest, loc
+    return line, ""
 
 def parse_resume_text(text: str) -> dict:
     profile = {k: (list(v) if isinstance(v, list) else (dict(v) if isinstance(v, dict) else v))
@@ -169,10 +214,11 @@ def parse_resume_text(text: str) -> dict:
             if is_header and not is_bullet:
                 if current_exp and (current_exp["title"] or current_exp["description"]):
                     experiences.append(current_exp)
-                title, comp, per = _parse_job_header(line)
+                title, comp, per, loc = _parse_job_header(line)
                 current_exp = {
-                    "title": title or "Cargo Profissional",
-                    "company": comp or "Empresa",
+                    "title": title,
+                    "company": comp,
+                    "location": loc,
                     "period": per or period,
                     "description": [],
                 }
@@ -181,10 +227,11 @@ def parse_resume_text(text: str) -> dict:
                     current_exp["description"].append(clean_text)
             else:
                 # First experience item encountered
-                title, comp, per = _parse_job_header(line)
+                title, comp, per, loc = _parse_job_header(line)
                 current_exp = {
-                    "title": title or "Cargo Profissional",
-                    "company": comp or "Empresa",
+                    "title": title,
+                    "company": comp,
+                    "location": loc,
                     "period": per or period,
                     "description": [clean_text] if is_bullet and clean_text else [],
                 }
@@ -193,6 +240,49 @@ def parse_resume_text(text: str) -> dict:
             experiences.append(current_exp)
 
         profile["experience"] = experiences
+
+    # Leadership: same entry shape as experience
+    # (title/role, company/org, location, period, bullets).
+    lead_lines = sec_buckets["leadership"]
+    if lead_lines:
+        leadership = []
+        current_lead = None
+
+        for line in lead_lines:
+            is_bullet = bool(re.match(r"^[\s]*[-•*–—\d\.]+\s*", line))
+            clean_text = re.sub(r"^[\s]*[-•*–—\d\.]+\s*", "", line).strip()
+
+            _, period = _extract_dates(line)
+            is_header = bool(period) or (not is_bullet and any(sep in line for sep in [" | ", " - ", " – ", " at ", " em "]))
+
+            if is_header and not is_bullet:
+                if current_lead and (current_lead["title"] or current_lead["description"]):
+                    leadership.append(current_lead)
+                title, comp, per, loc = _parse_job_header(line)
+                current_lead = {
+                    "title": title,
+                    "company": comp,
+                    "location": loc,
+                    "period": per or period,
+                    "description": [],
+                }
+            elif current_lead:
+                if clean_text:
+                    current_lead["description"].append(clean_text)
+            else:
+                title, comp, per, loc = _parse_job_header(line)
+                current_lead = {
+                    "title": title,
+                    "company": comp,
+                    "location": loc,
+                    "period": per or period,
+                    "description": [clean_text] if is_bullet and clean_text else [],
+                }
+
+        if current_lead and (current_lead["title"] or current_lead["description"]):
+            leadership.append(current_lead)
+
+        profile["leadership"] = leadership
 
     # Education
     edu_lines = sec_buckets["education"]
@@ -205,19 +295,20 @@ def parse_resume_text(text: str) -> dict:
             if is_new_edu:
                 if current_edu:
                     education_items.append(current_edu)
-                p1, p2, per = _parse_job_header(line)
+                p1, p2, per, loc = _parse_job_header(line)
                 univ_keywords = ["universidade", "faculdade", "usp", "unicamp", "ufrj", "college", "school", "instituto", "fatec", "puc"]
                 if any(u in p1.lower() for u in univ_keywords):
                     inst_name = p1
-                    deg_name = p2 or "Graduação"
+                    deg_name = p2
                 else:
-                    inst_name = p2 or "Instituição de Ensino"
-                    deg_name = p1 or "Bacharelado"
+                    inst_name = p2
+                    deg_name = p1
 
                 current_edu = {
                     "institution": inst_name,
                     "degree": deg_name,
-                    "year": per or period or "2020",
+                    "location": loc,
+                    "year": per or period,
                 }
             elif current_edu and not current_edu.get("degree"):
                 current_edu["degree"] = line

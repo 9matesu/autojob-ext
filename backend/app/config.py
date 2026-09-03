@@ -28,7 +28,7 @@ class Settings:
     ai_base_url: str = ""
     ai_temperature: float = 0.2
     ai_max_tokens: int = 4096
-    default_template: str = "editorial"
+    default_template: str = "devcelio"
     default_lang: str = "en"     # "en" or "pt"
     compiler_preference: str = "auto" # "auto" | "tectonic" | "pdflatex"
 

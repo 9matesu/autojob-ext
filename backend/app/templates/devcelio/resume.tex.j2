@@ -1,0 +1,196 @@
+% AutoJob Studio — template "devcelio" (fidelidade adaptada)
+% Layout e ordem de seções baseados em devcelio/resume-template
+% (https://github.com/devcelio/resume-template, Apache-2.0).
+% Adaptações: resumo opcional no topo; projetos/certificações opcionais
+% ao final; PT/EN automático via variável lang.
+%
+\documentclass[a4paper,10pt]{article}
+
+% --- PACOTES: BASE / IDIOMA ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+<% if lang == 'en' -%>
+\usepackage[english]{babel}
+<%- else -%>
+\usepackage[portuguese]{babel}
+<%- endif %>
+
+% --- PACOTES: LAYOUT / TIPOGRAFIA ---
+\usepackage{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{array}
+\usepackage{tabularx}
+
+% --- PACOTES: LINKS / BOOKMARKS ---
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{xurl}
+
+% --- CONFIGURAÇÃO: MARGENS / ESPAÇAMENTO ---
+\geometry{top=1.5cm, bottom=1.5cm, left=1.5cm, right=1.5cm}
+\setcounter{secnumdepth}{0}
+\setlist[itemize]{
+    leftmargin=0.75em,
+    itemsep=0.2em,
+    topsep=0.25em,
+    parsep=0em,
+    partopsep=0em
+}
+
+\pagestyle{empty}
+
+% --- CONFIGURAÇÃO: METADADOS / LINKS ---
+\hypersetup{
+    pdftitle={CV << personal.get('name','') | esc >>},
+    pdfauthor={<< personal.get('name','') | esc >>},
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=black,
+    citecolor=black,
+    bookmarksdepth=2
+}
+
+% --- CONFIGURAÇÃO: TÍTULOS ---
+\titleformat{\section}
+{\Large\bfseries}
+{}
+{0em}
+{}
+[\titlerule\vspace{0.5ex}]
+\titleformat{\subsection}
+{\normalsize\bfseries}
+{}
+{0em}
+{}
+\titlespacing*{\subsection}{0pt}{0.35em}{0.15em}
+
+\newcounter{cventry}
+\newcommand{\cventry}[4]{%
+    \refstepcounter{cventry}%
+    \phantomsection%
+    \pdfbookmark[2]{#1}{cventry-\thecventry}%
+    \noindent\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X >{\raggedleft\arraybackslash}X@{}}
+    \textbf{#1} & #2 \\
+    \textit{#3} & \textit{#4} \\
+    \end{tabularx}%
+}
+
+% --- INÍCIO DO DOCUMENTO ---
+\begin{document}
+
+% --- CABEÇALHO ---
+\begin{center}
+    {\LARGE \textbf{<< personal.get('name','') | esc >>}}
+    \\ [0.1cm]
+    <%- set hdr = [] %>
+    <%- if personal.get('location') %><%- set _ = hdr.append(personal.get('location') | esc) %><%- endif %>
+    <%- if personal.get('email') %><%- set _ = hdr.append('\\href{mailto:' + (personal.get('email') | esc_url) + '}{' + (personal.get('email') | esc) + '}') %><%- endif %>
+    <%- if personal.get('linkedin') %><%- set _ = hdr.append('\\href{' + (personal.get('linkedin') | esc_url) + '}{' + (personal.get('linkedin') | short_url | esc) + '}') %><%- endif %>
+    <%- if personal.get('github') %><%- set _ = hdr.append('\\href{' + (personal.get('github') | esc_url) + '}{' + (personal.get('github') | short_url | esc) + '}') %><%- endif %>
+    << hdr | join(' \\textbullet{} ') >>
+\end{center}
+
+<% if lang == 'en' -%>
+<%- set L = {'summary': 'Professional Summary', 'leadership': 'Leadership Activities',
+             'experience': 'Experience', 'skills': 'Skills', 'education': 'Education',
+             'projects': 'Projects', 'certifications': 'Certifications',
+             'technical': 'Technical', 'languages': 'Languages'} -%>
+<%- else -%>
+<%- set L = {'summary': 'Resumo Profissional', 'leadership': 'Atividades de Liderança',
+             'experience': 'Experiência', 'skills': 'Habilidades', 'education': 'Educação',
+             'projects': 'Projetos', 'certifications': 'Certificações',
+             'technical': 'Técnicas', 'languages': 'Idiomas'} -%>
+<%- endif %>
+
+<% if resume.summary -%>
+\section{<< L['summary'] >>}
+<< resume.summary | esc >>
+
+<%- endif %>
+
+<% if resume.leadership -%>
+\section{<< L['leadership'] >>}
+<%- for lead in resume.leadership %>
+\cventry{<< (lead.get('company') or lead.get('org') or '') | esc >>}{<< (lead.get('location') or '') | esc >>}{<< (lead.get('role') or lead.get('title') or '') | esc >>}{<< lead | dates | esc >>}
+<%- set bl = lead | bullets %>
+<%- if bl %>
+\begin{itemize}
+<%- for b in bl %>
+    \item << b | esc >>
+<%- endfor %>
+\end{itemize}
+<%- endif %>
+\vspace{0.2em}
+<%- endfor %>
+
+<%- endif %>
+
+<% if resume.experience -%>
+\section{<< L['experience'] >>}
+<%- for exp in resume.experience %>
+\cventry{<< (exp.get('company') or '') | esc >>}{<< (exp.get('location') or '') | esc >>}{<< (exp.get('role') or exp.get('title') or '') | esc >>}{<< exp | dates | esc >>}
+<%- set bl = exp | bullets %>
+<%- if bl %>
+\begin{itemize}
+<%- for b in bl %>
+    \item << b | esc >>
+<%- endfor %>
+\end{itemize}
+<%- endif %>
+\vspace{0.2em}
+<%- endfor %>
+
+<%- endif %>
+
+<% if resume.skills or resume.languages -%>
+\section{<< L['skills'] >>}
+\begin{itemize}
+<%- if resume.skills %>
+    \item \textbf{<< L['technical'] >>:} << resume.skills | names | esc >>
+<%- endif %>
+<%- if resume.languages %>
+    \item \textbf{<< L['languages'] >>:} << resume.languages | names | esc >>
+<%- endif %>
+\end{itemize}
+
+<%- endif %>
+
+<% if resume.education -%>
+\section{<< L['education'] >>}
+<%- for ed in resume.education %>
+\cventry{<< (ed.get('institution') or '') | esc >>}{<< (ed.get('location') or '') | esc >>}{<< (ed.get('degree') or ed.get('course') or '') | esc >>}{<< ed | dates | esc >>}
+<%- endfor %>
+
+<%- endif %>
+
+<% if resume.projects -%>
+\section{<< L['projects'] >>}
+<%- for p in resume.projects %>
+\cventry{<< (p.get('name') or '') | esc >>}{<< (p.get('location') or '') | esc >>}{<< (p.get('role') or 'Projeto') | esc >>}{<< p | dates | esc >>}
+<%- set bl = p | bullets %>
+<%- if bl %>
+\begin{itemize}
+<%- for b in bl %>
+    \item << b | esc >>
+<%- endfor %>
+\end{itemize}
+<%- endif %>
+\vspace{0.2em}
+<%- endfor %>
+
+<%- endif %>
+
+<% if resume.certifications -%>
+\section{<< L['certifications'] >>}
+\begin{itemize}
+<%- for c in resume.certifications %>
+    \item << (c.get('name') or '') | esc >>
+<%- endfor %>
+\end{itemize}
+
+<%- endif %>
+
+\end{document}

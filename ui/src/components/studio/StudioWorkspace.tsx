@@ -27,7 +27,7 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
   const [profile, setProfile] = useState<CandidateProfile>(adaptedData.adaptation.tailored_profile);
   const [rawTex, setRawTex] = useState(adaptedData.adaptation.tex_code);
   const [pdfUrl, setPdfUrl] = useState(adaptedData.adaptation.pdf_url);
-  const [matchScore] = useState(adaptedData.adaptation.match_score);
+  const [matchScore] = useState(adaptedData.adaptation.match_score ?? 0);
 
   const [compiling, setCompiling] = useState(false);
   const [polishingIndex, setPolishingIndex] = useState<{ expIdx: number; bIdx: number } | null>(null);

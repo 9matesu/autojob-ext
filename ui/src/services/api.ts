@@ -56,8 +56,8 @@ export interface AdaptedResult {
   job: JobData;
   adaptation: {
     id: string;
-    match_score: number;
-    applied_keywords: string[];
+    match_score: number | null;
+    applied_keywords?: string[];
     tailored_profile: CandidateProfile;
     tex_code: string;
     pdf_url: string;

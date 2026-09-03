@@ -255,18 +255,18 @@ export function SidePanelApp() {
                       {result.job.location ? ` — ${result.job.location}` : ''}
                     </p>
                   </div>
-                  {result.adaptation.match_score > 0 && (
+                  {result.adaptation.match_score != null && result.adaptation.match_score > 0 && (
                     <span className="brutal-tag brutal-tag-yellow shrink-0">
                       {result.adaptation.match_score.toFixed(0)}%
                     </span>
                   )}
                 </div>
 
-                {result.adaptation.applied_keywords.length > 0 && (
+                {(result.adaptation.applied_keywords?.length ?? 0) > 0 && (
                   <div className="hairline-b pb-3">
                     <div className="text-[10px] font-bold uppercase mb-1.5">Palavras-chave aplicadas</div>
                     <div className="flex flex-wrap gap-1.5">
-                      {result.adaptation.applied_keywords.map((k) => (
+                      {result.adaptation.applied_keywords!.map((k) => (
                         <span key={k} className="brutal-tag">{k}</span>
                       ))}
                     </div>

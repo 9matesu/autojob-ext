@@ -38,7 +38,7 @@ class PolishBulletPayload(BaseModel):
 class CompilePayload(BaseModel):
     profile: dict | None = None
     raw_tex: str | None = None
-    template: str = "editorial"
+    template: str = "devcelio"
     lang: str = "en"
     job: dict | None = None
 
@@ -203,6 +203,21 @@ def parse_resume_from_path(payload: ParsePathPayload):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse resume: {e}")
 
+def _merge_tailored(master_profile: dict, adapted_json: dict) -> dict:
+    """Mescla o JSON adaptado pela IA sobre o perfil mestre.
+
+    Campos ausentes no adaptado herdam do mestre; nada é inventado aqui.
+    """
+    return {
+        **master_profile,
+        "summary": adapted_json.get("summary") or master_profile.get("summary", ""),
+        "skills": adapted_json.get("skills") or master_profile.get("skills", []),
+        "experience": adapted_json.get("experience") or master_profile.get("experience", []),
+        "projects": adapted_json.get("projects") or master_profile.get("projects", []),
+        "leadership": adapted_json.get("leadership") or master_profile.get("leadership", []),
+    }
+
+
 def _run_adapt_pipeline(job_data: dict, captured_chars: int | None = None) -> dict:
     """Shared pipeline: adapt master profile against job, compile LaTeX, save history."""
     cand = profile_model.get_active()
@@ -224,13 +239,7 @@ def _run_adapt_pipeline(job_data: dict, captured_chars: int | None = None) -> di
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Adaptação de currículo falhou: {e}")
 
-    tailored_profile = {
-        **master_profile,
-        "summary": adapted_json.get("summary") or master_profile.get("summary", ""),
-        "skills": adapted_json.get("skills") or master_profile.get("skills", []),
-        "experience": adapted_json.get("experience") or master_profile.get("experience", []),
-        "projects": adapted_json.get("projects") or master_profile.get("projects", []),
-    }
+    tailored_profile = _merge_tailored(master_profile, adapted_json)
     try:
         match_score = float(adapted_json.get("match_score") or 0.0)
     except (TypeError, ValueError):
@@ -315,12 +324,7 @@ def adapt_job_endpoint(payload: AdaptJobPayload):
     adapted_raw = prov.chat(prompts.SYSTEM_RULES, user_prompt, expect_json=True)
     adapted_json = gateway.AIProvider._extract_json(adapted_raw)
 
-    tailored_profile = {
-        **master_profile,
-        "summary": adapted_json.get("summary") or master_profile.get("summary", ""),
-        "skills": adapted_json.get("skills") or master_profile.get("skills", []),
-        "experience": adapted_json.get("experience") or master_profile.get("experience", []),
-    }
+    tailored_profile = _merge_tailored(master_profile, adapted_json)
     match_score = float(adapted_json.get("match_score") or 90.0)
     recruiter_pitch = adapted_json.get("recruiter_pitch") or ""
 

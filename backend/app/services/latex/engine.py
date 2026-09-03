@@ -86,7 +86,13 @@ def _bullets(entry: dict) -> list[str]:
     if isinstance(bl, list) and bl:
         return [str(b) for b in bl if str(b).strip()]
     desc = entry.get("description") or ""
-    lines = [ln.strip(" -*•\t") for ln in str(desc).splitlines()]
+    if isinstance(desc, list):
+        lines = []
+        for item in desc:
+            lines.extend(str(item).splitlines())
+    else:
+        lines = str(desc).splitlines()
+    lines = [ln.strip(" -*•\t") for ln in lines]
     return [ln for ln in lines if ln.strip()]
 
 

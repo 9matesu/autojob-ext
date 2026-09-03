@@ -26,7 +26,26 @@ interface StudioWorkspaceProps {
 
 export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData }) => {
   const [activeTab, setActiveTab] = useState<'visual' | 'latex'>('visual');
-  const [profile, setProfile] = useState<CandidateProfile>(adaptedData.adaptation.tailored_profile);
+  const [profile, setProfile] = useState<CandidateProfile>(() => {
+    const coerceBullets = (d: unknown): string[] =>
+      Array.isArray(d)
+        ? d.map((x) => String(x))
+        : typeof d === 'string' && d.trim()
+          ? d.split(/\r?\n/).map((s) => s.trim()).filter(Boolean)
+          : [];
+    const base = adaptedData.adaptation.tailored_profile;
+    const fixEntries = (list: any[] | undefined) =>
+      (list || []).map((e) => ({ ...e, description: coerceBullets(e?.description) }));
+    return {
+      ...base,
+      leadership: fixEntries(base.leadership),
+      experience: fixEntries(base.experience),
+      education: base.education || [],
+      projects: base.projects || [],
+      certifications: base.certifications || [],
+      languages: base.languages || [],
+    };
+  });
   const [rawTex, setRawTex] = useState(adaptedData.adaptation.tex_code);
   const [pdfUrl, setPdfUrl] = useState(adaptedData.adaptation.pdf_url);
   const [matchScore] = useState(adaptedData.adaptation.match_score ?? 0);
@@ -81,16 +100,19 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
     }
   };
 
-  // AI Polish single bullet
-  const handlePolishBullet = async (expIdx: number, bIdx: number) => {
+  // AI Polish single bullet (experience or leadership)
+  const handlePolishBullet = async (section: 'experience' | 'leadership', expIdx: number, bIdx: number) => {
     setPolishingIndex({ expIdx, bIdx });
     try {
-      const currentBullet = profile.experience[expIdx].description[bIdx];
+      const list = section === 'experience' ? profile.experience : (profile.leadership || []);
+      const currentBullet = list[expIdx].description[bIdx];
       const roleContext = `${adaptedData.job.title} at ${adaptedData.job.company}`;
       const polished = await polishBullet(currentBullet, roleContext);
 
       const updated = { ...profile };
-      updated.experience[expIdx].description[bIdx] = polished;
+      const target = (section === 'experience' ? updated.experience : (updated.leadership || [])) as typeof list;
+      target[expIdx].description[bIdx] = polished;
+      if (section === 'leadership') updated.leadership = target;
       setProfile(updated);
     } catch (err: any) {
       console.error('Polish error:', err);
@@ -209,7 +231,7 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
                           <div className="flex flex-col gap-1">
                             <button
                               type="button"
-                              onClick={() => handlePolishBullet(expIdx, bIdx)}
+                              onClick={() => handlePolishBullet('experience', expIdx, bIdx)}
                               disabled={polishingIndex?.expIdx === expIdx && polishingIndex?.bIdx === bIdx}
                               title="Aprimorar este item com IA"
                               className="brutal-btn p-2 cursor-pointer"
@@ -251,6 +273,163 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
                 ))}
               </div>
 
+              {/* Leadership Section (espelha o template) */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase tracking-wider block">
+                    Atividades de Liderança
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfile({
+                        ...profile,
+                        leadership: [
+                          ...(profile.leadership || []),
+                          { title: '', company: '', location: '', period: '', description: [] },
+                        ],
+                      });
+                    }}
+                    className="text-[11px] font-bold underline underline-offset-4 inline-flex items-center gap-1 cursor-pointer hover:bg-black hover:text-white px-1 py-0.5 transition-colors"
+                  >
+                    + Adicionar atividade
+                  </button>
+                </div>
+
+                {(profile.leadership || []).map((lead, leadIdx) => (
+                  <div key={leadIdx} className="brutal-card p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-bold text-xs uppercase">{lead.title || 'Nova atividade'}</span>
+                        {lead.company && (
+                          <span className="text-xs text-neutral-500 ml-2 font-medium">na {lead.company}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-neutral-400 font-mono">{lead.period}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProfile({
+                              ...profile,
+                              leadership: (profile.leadership || []).filter((_, i) => i !== leadIdx),
+                            });
+                          }}
+                          className="brutal-btn p-1.5 cursor-pointer"
+                          title="Remover atividade"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={lead.title}
+                        onChange={(e) => {
+                          const updated = [...(profile.leadership || [])];
+                          updated[leadIdx] = { ...updated[leadIdx], title: e.target.value };
+                          setProfile({ ...profile, leadership: updated });
+                        }}
+                        placeholder="Cargo / Posição"
+                        className="brutal-input text-xs"
+                      />
+                      <input
+                        type="text"
+                        value={lead.company}
+                        onChange={(e) => {
+                          const updated = [...(profile.leadership || [])];
+                          updated[leadIdx] = { ...updated[leadIdx], company: e.target.value };
+                          setProfile({ ...profile, leadership: updated });
+                        }}
+                        placeholder="Organização"
+                        className="brutal-input text-xs"
+                      />
+                      <input
+                        type="text"
+                        value={lead.location || ''}
+                        onChange={(e) => {
+                          const updated = [...(profile.leadership || [])];
+                          updated[leadIdx] = { ...updated[leadIdx], location: e.target.value };
+                          setProfile({ ...profile, leadership: updated });
+                        }}
+                        placeholder="Local"
+                        className="brutal-input text-xs"
+                      />
+                      <input
+                        type="text"
+                        value={lead.period || ''}
+                        onChange={(e) => {
+                          const updated = [...(profile.leadership || [])];
+                          updated[leadIdx] = { ...updated[leadIdx], period: e.target.value };
+                          setProfile({ ...profile, leadership: updated });
+                        }}
+                        placeholder="Período"
+                        className="brutal-input text-xs"
+                      />
+                    </div>
+
+                    {/* Bullets */}
+                    <div className="space-y-2">
+                      {(lead.description || []).map((bullet, bIdx) => (
+                        <div key={bIdx} className="flex items-start gap-2 group">
+                          <span className="mt-2.5 text-xs font-bold">—</span>
+                          <textarea
+                            rows={2}
+                            value={bullet}
+                            onChange={(e) => {
+                              const updated = [...(profile.leadership || [])];
+                              updated[leadIdx].description[bIdx] = e.target.value;
+                              setProfile({ ...profile, leadership: updated });
+                            }}
+                            className="brutal-input flex-1 leading-relaxed"
+                          />
+                          <div className="flex flex-col gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handlePolishBullet('leadership', leadIdx, bIdx)}
+                              disabled={polishingIndex?.expIdx === leadIdx && polishingIndex?.bIdx === bIdx}
+                              title="Aprimorar este item com IA"
+                              className="brutal-btn p-2 cursor-pointer"
+                            >
+                              {polishingIndex?.expIdx === leadIdx && polishingIndex?.bIdx === bIdx ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Wand2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = [...(profile.leadership || [])];
+                                updated[leadIdx].description = updated[leadIdx].description.filter((_, i) => i !== bIdx);
+                                setProfile({ ...profile, leadership: updated });
+                              }}
+                              className="brutal-btn p-2 cursor-pointer"
+                              title="Remover item"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = [...(profile.leadership || [])];
+                          updated[leadIdx].description.push('Novo item de impacto...');
+                          setProfile({ ...profile, leadership: updated });
+                        }}
+                        className="text-[11px] font-bold underline underline-offset-4 inline-flex items-center gap-1 cursor-pointer hover:bg-black hover:text-white px-1 py-0.5 transition-colors"
+                      >
+                        + Adicionar item de impacto
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               {/* Highlighted Skills */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-wider block">
@@ -278,6 +457,149 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
                   className="brutal-input"
                 />
               </div>
+
+              {/* Education Section (espelha o template) */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase tracking-wider block">
+                    Formação Acadêmica
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfile({
+                        ...profile,
+                        education: [
+                          ...profile.education,
+                          { institution: '', degree: '', year: '', location: '' },
+                        ],
+                      });
+                    }}
+                    className="text-[11px] font-bold underline underline-offset-4 inline-flex items-center gap-1 cursor-pointer hover:bg-black hover:text-white px-1 py-0.5 transition-colors"
+                  >
+                    + Adicionar formação
+                  </button>
+                </div>
+
+                {profile.education.map((edu, eduIdx) => (
+                  <div key={eduIdx} className="brutal-card p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs uppercase">{edu.institution || 'Nova formação'}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfile({
+                            ...profile,
+                            education: profile.education.filter((_, i) => i !== eduIdx),
+                          });
+                        }}
+                        className="brutal-btn p-1.5 cursor-pointer"
+                        title="Remover formação"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={edu.institution}
+                        onChange={(e) => {
+                          const updated = [...profile.education];
+                          updated[eduIdx] = { ...updated[eduIdx], institution: e.target.value };
+                          setProfile({ ...profile, education: updated });
+                        }}
+                        placeholder="Instituição"
+                        className="brutal-input text-xs"
+                      />
+                      <input
+                        type="text"
+                        value={edu.degree || ''}
+                        onChange={(e) => {
+                          const updated = [...profile.education];
+                          updated[eduIdx] = { ...updated[eduIdx], degree: e.target.value };
+                          setProfile({ ...profile, education: updated });
+                        }}
+                        placeholder="Curso / Grau"
+                        className="brutal-input text-xs"
+                      />
+                      <input
+                        type="text"
+                        value={edu.location || ''}
+                        onChange={(e) => {
+                          const updated = [...profile.education];
+                          updated[eduIdx] = { ...updated[eduIdx], location: e.target.value };
+                          setProfile({ ...profile, education: updated });
+                        }}
+                        placeholder="Local"
+                        className="brutal-input text-xs"
+                      />
+                      <input
+                        type="text"
+                        value={edu.year || ''}
+                        onChange={(e) => {
+                          const updated = [...profile.education];
+                          updated[eduIdx] = { ...updated[eduIdx], year: e.target.value };
+                          setProfile({ ...profile, education: updated });
+                        }}
+                        placeholder="Ano / Período"
+                        className="brutal-input text-xs"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {(profile.projects || []).length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider block">
+                    Projetos
+                  </label>
+                  {(profile.projects || []).map((p, pIdx) => (
+                    <div key={pIdx} className="brutal-card p-3 flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold">{p.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfile({
+                            ...profile,
+                            projects: (profile.projects || []).filter((_, i) => i !== pIdx),
+                          });
+                        }}
+                        className="brutal-btn p-1.5 cursor-pointer"
+                        title="Remover projeto"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(profile.certifications || []).length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider block">
+                    Certificações
+                  </label>
+                  {(profile.certifications || []).map((c, cIdx) => (
+                    <div key={cIdx} className="brutal-card p-3 flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold">{typeof c === 'string' ? c : c.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfile({
+                            ...profile,
+                            certifications: (profile.certifications || []).filter((_, i) => i !== cIdx),
+                          });
+                        }}
+                        className="brutal-btn p-1.5 cursor-pointer"
+                        title="Remover certificação"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           ) : (
             /* Raw LaTeX Source Tab */

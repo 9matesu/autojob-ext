@@ -158,3 +158,39 @@ def test_devcelio_cventry_renders_location():
 
 def test_adapt_schema_includes_leadership():
     assert "leadership" in prompts.ADAPT_SCHEMA_HINT
+
+def test_bullets_with_list_description():
+    entry = {"description": ["Fez A.", "Fez B."]}
+    assert engine._bullets(entry) == ["Fez A.", "Fez B."]
+
+
+def test_bullets_with_string_description():
+    entry = {"description": "Fez A.\nFez B."}
+    assert engine._bullets(entry) == ["Fez A.", "Fez B."]
+
+
+def test_bullets_never_stringifies_list():
+    entry = {"description": ["Primeiro item", "Segundo item"]}
+    for bullet in engine._bullets(entry):
+        assert not bullet.startswith("[")
+        assert "', '" not in bullet
+
+
+def test_merge_tailored_keeps_leadership():
+    from app.api.routes import _merge_tailored
+    master = {"summary": "M", "skills": ["X"], "experience": [],
+              "projects": [], "education": []}
+    adapted = {"leadership": [{"title": "Lider", "company": "Org"}]}
+    merged = _merge_tailored(master, adapted)
+    assert merged["leadership"] == [{"title": "Lider", "company": "Org"}]
+    assert merged["skills"] == ["X"]
+
+
+def test_merge_tailored_falls_back_to_master():
+    from app.api.routes import _merge_tailored
+    master = {"summary": "M", "skills": ["X"], "experience": [],
+              "projects": [], "education": [],
+              "leadership": [{"title": "Lider"}]}
+    merged = _merge_tailored(master, {})
+    assert merged["leadership"] == [{"title": "Lider"}]
+    assert merged["summary"] == "M"

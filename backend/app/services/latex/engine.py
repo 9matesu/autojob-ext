@@ -9,6 +9,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -238,7 +239,11 @@ def download_tectonic_if_missing() -> str | None:
 
 
 def compile_pdf(tex_source: str, workdir: Path) -> Path:
-    """Run Tectonic or pdflatex in an isolated temp dir, copy PDF out."""
+    """Run Tectonic or pdflatex in an isolated temp dir, copy PDF out.
+
+    Duas tentativas: falhas transitórias de compilador (lock do MiKTeX,
+    varredura de antivírus, timeout) não devem derrubar a captura inteira.
+    """
     tex_path = workdir / "resume.tex"
     tex_path.write_text(tex_source, encoding="utf-8")
     comp_type, comp_path = find_compiler()
@@ -253,33 +258,44 @@ def compile_pdf(tex_source: str, workdir: Path) -> Path:
                 transient=False
             )
 
-    with tempfile.TemporaryDirectory(prefix="autojob_tex_") as tmp:
-        tmp_path = Path(tmp)
-        if comp_type == "tectonic":
-            proc = subprocess.run(
-                [comp_path, "-X", "compile", str(tex_path), "--outdir", str(tmp_path)],
-                capture_output=True, text=True, timeout=300
-            )
-            if proc.returncode != 0:
-                log_tail = proc.stdout[-1500:] if proc.stdout else (proc.stderr or "Compilation error")
-                raise LatexError(f"Tectonic failed: {log_tail}", transient=False)
-        else:
-            for _pass in (1, 2):
-                proc = subprocess.run(
-                    [comp_path, "-interaction=nonstopmode", "-halt-on-error",
-                     "-output-directory", str(tmp_path), str(tex_path)],
-                    capture_output=True, text=True, timeout=120,
-                    cwd=str(tmp_path),
-                )
-                if proc.returncode != 0:
-                    log_tail = _extract_errors(proc.stdout) or proc.stdout[-1500:]
-                    raise LatexError(f"pdflatex failed (pass {_pass}): {log_tail}", transient=False)
-        pdf_src = tmp_path / "resume.pdf"
-        if not pdf_src.exists():
-            raise LatexError(f"{comp_type} produced no PDF", transient=False)
-        pdf_out = workdir / "resume.pdf"
-        shutil.copyfile(pdf_src, pdf_out)
-        return pdf_out
+    last_err: Exception | None = None
+    for attempt in (1, 2):
+        try:
+            with tempfile.TemporaryDirectory(prefix="autojob_tex_") as tmp:
+                tmp_path = Path(tmp)
+                if comp_type == "tectonic":
+                    proc = subprocess.run(
+                        [comp_path, "-X", "compile", str(tex_path), "--outdir", str(tmp_path)],
+                        capture_output=True, text=True, timeout=300
+                    )
+                    if proc.returncode != 0:
+                        log_tail = proc.stdout[-1500:] if proc.stdout else (proc.stderr or "Compilation error")
+                        raise LatexError(f"Tectonic failed: {log_tail}", transient=False)
+                else:
+                    for _pass in (1, 2):
+                        proc = subprocess.run(
+                            [comp_path, "-interaction=nonstopmode", "-halt-on-error",
+                             "-output-directory", str(tmp_path), str(tex_path)],
+                            capture_output=True, text=True, timeout=180,
+                            cwd=str(tmp_path),
+                        )
+                        if proc.returncode != 0:
+                            log_tail = _extract_errors(proc.stdout) or proc.stdout[-1500:]
+                            raise LatexError(f"pdflatex failed (pass {_pass}): {log_tail}", transient=False)
+                pdf_src = tmp_path / "resume.pdf"
+                if not pdf_src.exists():
+                    raise LatexError(f"{comp_type} produced no PDF", transient=False)
+                pdf_out = workdir / "resume.pdf"
+                shutil.copyfile(pdf_src, pdf_out)
+                return pdf_out
+        except subprocess.TimeoutExpired as e:
+            last_err = LatexError(f"{comp_type} timed out after {e} on attempt {attempt}", transient=True)
+        except LatexError as e:
+            last_err = e
+        if attempt == 1:
+            time.sleep(1.5)
+
+    raise last_err if last_err else LatexError("Compilation failed", transient=False)
 
 
 def _extract_errors(stdout: str) -> str:

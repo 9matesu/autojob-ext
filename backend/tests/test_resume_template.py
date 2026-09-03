@@ -194,3 +194,33 @@ def test_merge_tailored_falls_back_to_master():
     merged = _merge_tailored(master, {})
     assert merged["leadership"] == [{"title": "Lider"}]
     assert merged["summary"] == "M"
+
+
+def test_compile_pdf_retries_transient_failure(tmp_path, monkeypatch):
+    import subprocess as sp
+    from pathlib import Path
+
+    calls = {"n": 0}
+
+    def fake_run(cmd, **kw):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise sp.TimeoutExpired(cmd, 1)
+
+        class R:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+
+        out = Path(kw["cwd"])
+        (out / "resume.pdf").write_bytes(b"%PDF-1.4 fake")
+        return R()
+
+    monkeypatch.setattr(engine.subprocess, "run", fake_run)
+    monkeypatch.setattr(engine, "find_compiler", lambda: ("pdflatex", "pdflatex"))
+    monkeypatch.setattr(engine.time, "sleep", lambda s: None)
+    work = tmp_path / "w"
+    work.mkdir()
+    pdf = engine.compile_pdf("% tex", work)
+    assert pdf.exists()
+    assert calls["n"] >= 2

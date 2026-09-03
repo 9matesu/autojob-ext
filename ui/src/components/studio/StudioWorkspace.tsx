@@ -1,0 +1,353 @@
+import React, { useState } from 'react';
+import {
+  Download,
+  Copy,
+  Check,
+  RefreshCw,
+  FileCode,
+  Sliders,
+  Trash2,
+  Loader2,
+  Wand2,
+} from 'lucide-react';
+import {
+  compileResume,
+  polishBullet,
+} from '../../services/api';
+import type {
+  AdaptedResult,
+  CandidateProfile,
+} from '../../services/api';
+
+interface StudioWorkspaceProps {
+  adaptedData: AdaptedResult;
+  onBackToOverlay?: () => void;
+}
+
+export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData }) => {
+  const [activeTab, setActiveTab] = useState<'visual' | 'latex'>('visual');
+  const [profile, setProfile] = useState<CandidateProfile>(adaptedData.adaptation.tailored_profile);
+  const [rawTex, setRawTex] = useState(adaptedData.adaptation.tex_code);
+  const [pdfUrl, setPdfUrl] = useState(adaptedData.adaptation.pdf_url);
+  const [recruiterPitch, setRecruiterPitch] = useState(adaptedData.adaptation.recruiter_pitch);
+  const [matchScore] = useState(adaptedData.adaptation.match_score);
+
+  const [compiling, setCompiling] = useState(false);
+  const [polishingIndex, setPolishingIndex] = useState<{ expIdx: number; bIdx: number } | null>(null);
+  const [copiedPitch, setCopiedPitch] = useState(false);
+  const [newSkill, setNewSkill] = useState('');
+
+  // Recompile PDF
+  const handleRecompile = async () => {
+    setCompiling(true);
+    try {
+      if (activeTab === 'latex') {
+        const res = await compileResume({ raw_tex: rawTex, job: adaptedData.job });
+        setPdfUrl(`${res.pdf_url}?t=${Date.now()}`);
+      } else {
+        const res = await compileResume({ profile, job: adaptedData.job });
+        setPdfUrl(`${res.pdf_url}?t=${Date.now()}`);
+        setRawTex(res.tex);
+      }
+    } catch (err: any) {
+      alert('Erro de compilação: ' + err.message);
+    } finally {
+      setCompiling(false);
+    }
+  };
+
+  // AI Polish single bullet
+  const handlePolishBullet = async (expIdx: number, bIdx: number) => {
+    setPolishingIndex({ expIdx, bIdx });
+    try {
+      const currentBullet = profile.experience[expIdx].description[bIdx];
+      const roleContext = `${adaptedData.job.title} at ${adaptedData.job.company}`;
+      const polished = await polishBullet(currentBullet, roleContext);
+
+      const updated = { ...profile };
+      updated.experience[expIdx].description[bIdx] = polished;
+      setProfile(updated);
+    } catch (err: any) {
+      console.error('Polish error:', err);
+    } finally {
+      setPolishingIndex(null);
+    }
+  };
+
+  const handleCopyPitch = async () => {
+    await navigator.clipboard.writeText(recruiterPitch);
+    setCopiedPitch(true);
+    setTimeout(() => setCopiedPitch(false), 2500);
+  };
+
+  const handleDownload = () => {
+    const a = document.createElement('a');
+    a.href = pdfUrl;
+    a.download = `Curriculo_${adaptedData.job.company.replace(/\s+/g, '_')}_${adaptedData.job.title.replace(/\s+/g, '_')}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleAddSkill = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && newSkill.trim() && !profile.skills.includes(newSkill.trim())) {
+      setProfile({ ...profile, skills: [...profile.skills, newSkill.trim()] });
+      setNewSkill('');
+    }
+  };
+
+  return (
+    <div className="flex h-screen w-screen bg-white text-black overflow-hidden select-none">
+      {/* LEFT PANE: Editor (50%) */}
+      <div className="w-1/2 flex flex-col hairline-r bg-white overflow-hidden">
+        {/* Top Job Context Bar */}
+        <div className="p-4 hairline-b bg-white flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-black text-sm uppercase tracking-tight">{adaptedData.job.title}</h2>
+              <span className="text-xs text-neutral-500 font-medium">na {adaptedData.job.company}</span>
+            </div>
+            {adaptedData.job.location && (
+              <span className="text-[11px] text-neutral-400 mt-0.5 block font-mono">{adaptedData.job.location}</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="brutal-tag brutal-tag-yellow">
+              {matchScore.toFixed(0)}% Compatibilidade
+            </span>
+
+            {/* Mode Toggle */}
+            <div className="flex border-2 border-black text-xs font-bold uppercase">
+              <button
+                onClick={() => setActiveTab('visual')}
+                className={`flex items-center gap-1 px-3 py-1.5 cursor-pointer transition-colors ${activeTab === 'visual' ? 'bg-black text-white' : 'bg-white text-black hover:bg-neutral-100'}`}
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                Visual
+              </button>
+              <button
+                onClick={() => setActiveTab('latex')}
+                className={`flex items-center gap-1 px-3 py-1.5 cursor-pointer transition-colors border-l-2 border-black ${activeTab === 'latex' ? 'bg-black text-white' : 'bg-white text-black hover:bg-neutral-100'}`}
+              >
+                <FileCode className="w-3.5 h-3.5" />
+                LaTeX
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+          {activeTab === 'visual' ? (
+            <>
+              {/* Recruiter Pitch Box */}
+              <div className="brutal-card p-4">
+                <div className="flex items-center justify-between text-xs mb-1.5 font-bold uppercase">
+                  <span>Mensagem para o Recrutador (LinkedIn):</span>
+                  <button
+                    onClick={handleCopyPitch}
+                    className="flex items-center gap-1 underline underline-offset-4 hover:bg-black hover:text-white px-1 py-0.5 transition-colors cursor-pointer"
+                  >
+                    {copiedPitch ? <Check className="w-3 h-3 stroke-[3]" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedPitch ? 'Copiado!' : 'Copiar Pitch'}</span>
+                  </button>
+                </div>
+                <textarea
+                  rows={2}
+                  value={recruiterPitch}
+                  onChange={(e) => setRecruiterPitch(e.target.value)}
+                  className="brutal-input leading-relaxed"
+                />
+              </div>
+
+              {/* Summary Section */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider block">
+                  Resumo Profissional Adaptado
+                </label>
+                <textarea
+                  rows={3}
+                  value={profile.summary}
+                  onChange={(e) => setProfile({ ...profile, summary: e.target.value })}
+                  className="brutal-input leading-relaxed"
+                />
+              </div>
+
+              {/* Experience Section */}
+              <div className="space-y-4">
+                <label className="text-[10px] font-bold uppercase tracking-wider block">
+                  Experiências e Conquistas Adaptadas
+                </label>
+
+                {profile.experience.map((exp, expIdx) => (
+                  <div key={expIdx} className="brutal-card p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-bold text-xs uppercase">{exp.title}</span>
+                        <span className="text-xs text-neutral-500 ml-2 font-medium">na {exp.company}</span>
+                      </div>
+                      <span className="text-[11px] text-neutral-400 font-mono">{exp.period}</span>
+                    </div>
+
+                    {/* Bullets */}
+                    <div className="space-y-2">
+                      {exp.description.map((bullet, bIdx) => (
+                        <div key={bIdx} className="flex items-start gap-2 group">
+                          <span className="mt-2.5 text-xs font-bold">—</span>
+                          <textarea
+                            rows={2}
+                            value={bullet}
+                            onChange={(e) => {
+                              const updated = { ...profile };
+                              updated.experience[expIdx].description[bIdx] = e.target.value;
+                              setProfile(updated);
+                            }}
+                            className="brutal-input flex-1 leading-relaxed"
+                          />
+                          <div className="flex flex-col gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handlePolishBullet(expIdx, bIdx)}
+                              disabled={polishingIndex?.expIdx === expIdx && polishingIndex?.bIdx === bIdx}
+                              title="Aprimorar este item com IA"
+                              className="brutal-btn p-2 cursor-pointer"
+                            >
+                              {polishingIndex?.expIdx === expIdx && polishingIndex?.bIdx === bIdx ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Wand2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = { ...profile };
+                                updated.experience[expIdx].description = updated.experience[expIdx].description.filter((_, i) => i !== bIdx);
+                                setProfile(updated);
+                              }}
+                              className="brutal-btn p-2 cursor-pointer"
+                              title="Remover item"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = { ...profile };
+                          updated.experience[expIdx].description.push('Nova conquista sob medida com métrica...');
+                          setProfile(updated);
+                        }}
+                        className="text-[11px] font-bold underline underline-offset-4 inline-flex items-center gap-1 cursor-pointer hover:bg-black hover:text-white px-1 py-0.5 transition-colors"
+                      >
+                        + Adicionar item de realização
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Highlighted Skills */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider block">
+                  Habilidades em Destaque
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.skills.map((skill) => (
+                    <span key={skill} className="brutal-tag">
+                      {skill}
+                      <button
+                        onClick={() => setProfile({ ...profile, skills: profile.skills.filter((s) => s !== skill) })}
+                        className="font-bold ml-1 hover:bg-black hover:text-white px-0.5 cursor-pointer"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={newSkill}
+                  onChange={(e) => setNewSkill(e.target.value)}
+                  onKeyDown={handleAddSkill}
+                  placeholder="Digite uma habilidade e pressione Enter..."
+                  className="brutal-input"
+                />
+              </div>
+            </>
+          ) : (
+            /* Raw LaTeX Source Tab */
+            <div className="h-full flex flex-col">
+              <label className="text-[10px] font-bold uppercase tracking-wider mb-2 block">
+                Código-Fonte LaTeX (Jinja2 / Tectonic)
+              </label>
+              <textarea
+                value={rawTex}
+                onChange={(e) => setRawTex(e.target.value)}
+                className="flex-1 min-h-[500px] w-full p-4 bg-black font-mono text-xs text-white border-2 border-black focus:outline-none leading-relaxed selection:bg-[#ffff00] selection:text-black"
+                spellCheck={false}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Action Footer */}
+        <div className="p-4 hairline-t bg-white flex items-center justify-between">
+          <span className="text-xs text-neutral-600 font-mono">
+            {compiling ? 'Compilando LaTeX com Tectonic...' : 'Alterações prontas para recompilação'}
+          </span>
+          <button
+            onClick={handleRecompile}
+            disabled={compiling}
+            className="brutal-btn-yellow flex items-center gap-2 px-5 py-2.5 text-xs tracking-wider"
+          >
+            {compiling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            <span>{compiling ? 'Compilando PDF...' : 'Recompilar e Atualizar PDF'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* RIGHT PANE: Live PDF Viewer (50%) */}
+      <div className="w-1/2 flex flex-col bg-neutral-100">
+        {/* Viewer Toolbar */}
+        <div className="p-3 hairline-b bg-white flex items-center justify-between">
+          <span className="text-xs font-bold flex items-center gap-2">
+            <span className="uppercase">Pré-visualização do PDF ATS</span>
+          </span>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyPitch}
+              className="brutal-btn flex items-center gap-1.5 px-3 py-1.5 text-[11px]"
+            >
+              {copiedPitch ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedPitch ? 'Copiado!' : 'Copiar Pitch'}</span>
+            </button>
+
+            <button
+              onClick={handleDownload}
+              className="brutal-btn-yellow flex items-center gap-1.5 px-4 py-1.5 text-[11px]"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Baixar PDF</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Embedded PDF iframe */}
+        <div className="flex-1 w-full h-full bg-neutral-200 p-4">
+          <div className="w-full h-full overflow-hidden border-2 border-black bg-white shadow-[8px_8px_0px_0px_#000000]">
+            <iframe
+              src={pdfUrl}
+              title="Pré-visualização do Currículo"
+              className="w-full h-full border-none"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

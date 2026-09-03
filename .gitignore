@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+backend/.venv/
+backend/data/
+backend/bin/
+backend/.env
+
+# Node / Vite
+ui/node_modules/
+ui/dist/
+
+# Extension build output (generated from ui/)
+extension/assets/
+extension/sidepanel.html
+extension/studio.html
+
+# Logs & temp
+*.log
+.DS_Store
+Thumbs.db

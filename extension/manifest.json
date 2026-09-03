@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "AutoJob Studio",
+  "description": "Captura a vaga direto do navegador e adapta seu curriculo em LaTeX.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "114",
+  "action": {
+    "default_title": "AutoJob Studio"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["sidePanel", "storage", "activeTab", "tabs"],
+  "host_permissions": ["http://127.0.0.1:8322/*"],
+  "commands": {
+    "capture": {
+      "suggested_key": { "default": "Alt+Shift+A" },
+      "description": "Capturar painel da vaga"
+    }
+  }
+}

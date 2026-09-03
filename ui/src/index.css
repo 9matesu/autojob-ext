@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    font-family: 'Space Mono', monospace, ui-monospace, monospace;
+    @apply bg-white text-black antialiased selection:bg-black selection:text-white;
+  }
+}
+
+.font-editorial {
+  font-family: 'Instrument Serif', serif;
+  letter-spacing: -0.02em;
+}
+
+.bg-brutal-yellow {
+  background-color: #ffff00;
+}
+
+.brutal-card {
+  background-color: #ffffff;
+  border: 2px solid #000000;
+  box-shadow: 4px 4px 0px 0px #000000;
+}
+
+.brutal-yellow-card {
+  background-color: #ffff00;
+  border: 2px solid #000000;
+  box-shadow: 8px 8px 0px 0px #000000;
+}
+
+.brutal-btn {
+  background-color: #ffffff;
+  color: #000000;
+  border: 2px solid #000000;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  box-shadow: 3px 3px 0px 0px #000000;
+  transition: all 0.1s ease;
+  cursor: pointer;
+}
+
+.brutal-btn:hover {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.brutal-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px 0px #000000;
+}
+
+.brutal-btn-yellow {
+  background-color: #ffff00;
+  color: #000000;
+  border: 2px solid #000000;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  box-shadow: 3px 3px 0px 0px #000000;
+  transition: all 0.1s ease;
+  cursor: pointer;
+}
+
+.brutal-btn-yellow:hover {
+  background-color: #000000;
+  color: #ffff00;
+}
+
+.brutal-btn-yellow:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px 0px #000000;
+}
+
+.hairline-b {
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.hairline-t {
+  border-top: 1px solid #1a1a1a;
+}
+
+.hairline-l {
+  border-left: 1px solid #1a1a1a;
+}
+
+.hairline-r {
+  border-right: 1px solid #1a1a1a;
+}
+
+.hairline-light-b {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.brutal-input {
+  width: 100%;
+  background-color: #ffffff;
+  color: #000000;
+  border: 2px solid #000000;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  padding: 8px 10px;
+  outline: none;
+  border-radius: 0;
+}
+
+.brutal-input:focus {
+  box-shadow: 3px 3px 0px 0px #ffff00;
+}
+
+.brutal-input::placeholder {
+  color: #9a9a9a;
+}
+
+.brutal-input:disabled {
+  background-color: #f1f1f1;
+  color: #777777;
+}
+
+select.brutal-input {
+  cursor: pointer;
+  border-radius: 0;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #000 50%), linear-gradient(135deg, #000 50%, transparent 50%);
+  background-position: calc(100% - 16px) calc(50% + 1px), calc(100% - 11px) calc(50% + 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+textarea.brutal-input {
+  resize: none;
+  line-height: 1.6;
+}
+
+.brutal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #000000;
+  background-color: #ffffff;
+  color: #000000;
+  padding: 2px 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.brutal-tag-black {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.brutal-tag-yellow {
+  background-color: #ffff00;
+  color: #000000;
+}
+
+.ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  text-align: left;
+}
+
+.ledger-table td {
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #111111;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #333333;
+}

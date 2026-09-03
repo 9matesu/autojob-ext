@@ -1,0 +1,197 @@
+% Standard ATS Resume Template — JoOob!
+% Layout editorial limpo de alta compatibilidade ATS, PT/EN automático
+%
+\documentclass[a4paper,10pt]{article}
+
+% --- PACOTES: BASE / IDIOMA ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+<% if lang == 'en' -%>
+\usepackage[english]{babel}
+<%- else -%>
+\usepackage[portuguese]{babel}
+<%- endif %>
+
+% --- PACOTES: LAYOUT / TIPOGRAFIA ---
+\usepackage{geometry}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{array}
+\usepackage{tabularx}
+
+% --- PACOTES: LINKS / BOOKMARKS ---
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{xurl}
+
+% --- CONFIGURAÇÃO: MARGENS / ESPAÇAMENTO ---
+\geometry{top=1.3cm, bottom=1.3cm, left=1.4cm, right=1.4cm}
+\setcounter{secnumdepth}{0}
+\setlist[itemize]{
+    leftmargin=1.1em,
+    itemsep=0.18em,
+    topsep=0.2em,
+    parsep=0em,
+    partopsep=0em
+}
+
+\pagestyle{empty}
+
+% --- CONFIGURAÇÃO: METADADOS / LINKS ---
+\hypersetup{
+    pdftitle={CV << personal.get('name','') | esc >>},
+    pdfauthor={<< personal.get('name','') | esc >>},
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=black,
+    citecolor=black,
+    bookmarksdepth=2
+}
+
+% --- CONFIGURAÇÃO: TÍTULOS ---
+\titleformat{\section}
+{\Large\bfseries}
+{}
+{0em}
+{}
+[\titlerule\vspace{0.5ex}]
+\titlespacing*{\section}{0pt}{0.9em}{0.4em}
+
+\titleformat{\subsection}
+{\normalsize\bfseries}
+{}
+{0em}
+{}
+\titlespacing*{\subsection}{0pt}{0.35em}{0.15em}
+
+\newcounter{cventry}
+\newcommand{\cventry}[4]{%
+    \refstepcounter{cventry}%
+    \phantomsection%
+    \pdfbookmark[2]{#1}{cventry-\thecventry}%
+    \noindent\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X >{\raggedleft\arraybackslash}X@{}}
+    \textbf{#1} & #2 \\
+    \textit{#3} & \textit{#4} \\
+    \end{tabularx}%
+    \vspace{-0.3em}
+}
+
+% --- INÍCIO DO DOCUMENTO ---
+\begin{document}
+
+% --- CABEÇALHO ---
+\begin{center}
+    {\LARGE \textbf{<< personal.get('name','') | esc >>}}
+    \\ [0.12cm]
+    << contact_line >>
+\end{center}
+\vspace{0.2cm}
+
+<% if lang == 'en' -%>
+<%- set L = {'summary': 'Professional Summary', 'experience': 'Experience',
+             'skills': 'Technical Skills', 'education': 'Education', 'projects': 'Projects',
+             'certifications': 'Certifications', 'technical': 'Technologies',
+             'languages': 'Languages'} -%>
+<%- else -%>
+<%- set L = {'summary': 'Resumo Profissional', 'experience': 'Experiência Profissional',
+             'skills': 'Habilidades Técnicas', 'education': 'Formação Acadêmica', 'projects': 'Projetos',
+             'certifications': 'Certificações', 'technical': 'Tecnologias',
+             'languages': 'Idiomas'} -%>
+<%- endif %>
+
+<% if resume.summary -%>
+\section{<< L['summary'] >>}
+<< resume.summary | esc >>
+
+<%- endif %>
+
+<% if resume.experience -%>
+\section{<< L['experience'] >>}
+<%- for exp in resume.experience %>
+\cventry{<< (exp.get('company') or exp.get('role') or '') | esc >>}{<< (exp.get('location') or '') | esc >>}{<< (exp.get('role') or exp.get('title') or '') | esc >>}{<< exp | dates | esc >>}
+<%- set bl = exp | bullets %>
+<%- if bl %>
+\begin{itemize}
+<%- for b in bl %>
+    \item << b | esc >>
+<%- endfor %>
+\end{itemize}
+<%- elif exp.get('description') %>
+\begin{itemize}
+    \item << exp['description'] | esc >>
+\end{itemize}
+<%- endif %>
+\vspace{0.2em}
+<%- endfor %>
+
+<%- endif %>
+
+<% if resume.education -%>
+\section{<< L['education'] >>}
+<%- for ed in resume.education %>
+\cventry{<< (ed.get('institution') or '') | esc >>}{<< (ed.get('location') or '') | esc >>}{<< (ed.get('degree') or ed.get('course') or '') | esc >>}{<< ed | dates | esc >>}
+<%- set bl = ed | bullets %>
+<%- if bl %>
+\begin{itemize}
+<%- for b in bl %>
+    \item << b | esc >>
+<%- endfor %>
+\end{itemize}
+<%- elif ed.get('description') %>
+\begin{itemize}
+    \item << ed['description'] | esc >>
+\end{itemize}
+<%- endif %>
+\vspace{0.2em}
+<%- endfor %>
+
+<%- endif %>
+
+<% if resume.projects -%>
+\section{<< L['projects'] >>}
+<%- for p in resume.projects %>
+\cventry{<< (p.get('name') or '') | esc >>}{<< (p.get('location') or '') | esc >>}{<< (p.get('role') or 'Projeto') | esc >>}{<< p | dates | esc >>}
+<%- set bl = p | bullets %>
+<%- if bl %>
+\begin{itemize}
+<%- for b in bl %>
+    \item << b | esc >>
+<%- endfor %>
+\end{itemize}
+<%- elif p.get('description') %>
+\begin{itemize}
+    \item << p['description'] | esc >>
+\end{itemize}
+<%- endif %>
+\vspace{0.2em}
+<%- endfor %>
+
+<%- endif %>
+
+<% if resume.skills or resume.languages -%>
+\section{<< L['skills'] >>}
+\begin{itemize}
+<%- if resume.skills %>
+    \item \textbf{<< L['technical'] >>:} << resume.skills | names | esc >>
+<%- endif %>
+<%- if resume.languages %>
+    \item \textbf{<< L['languages'] >>:} << resume.languages | names | esc >>
+<%- endif %>
+\end{itemize}
+
+<%- endif %>
+
+<% if resume.certifications -%>
+\section{<< L['certifications'] >>}
+\begin{itemize}
+<%- for c in resume.certifications %>
+    \item << (c.get('name') or '') | esc >>
+<%- endfor %>
+\end{itemize}
+
+<%- endif %>
+
+\end{document}

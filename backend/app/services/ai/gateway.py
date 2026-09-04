@@ -32,9 +32,13 @@ class AIProvider(abc.ABC):
     def chat(self, system: str, user: str, *, expect_json: bool = False) -> str:
         """Single chat completion. Returns the assistant text."""
 
-    @abc.abstractmethod
     def vision(self, system: str, prompt: str, image_bytes: bytes, mime_type: str = "image/png") -> str:
-        """Process image + prompt with multimodal LLM."""
+        """Process image + prompt with multimodal LLM. Optional per provider;
+        providers without image support raise a clear AIError."""
+        raise AIError(
+            f"Provedor {self.name!r} não suporta análise de imagem.",
+            transient=False,
+        )
 
     def chat_messages(self, messages: list[dict], *, expect_json: bool = False) -> str:
         """Multi-turn chat (ChatGPT-style). Default folds the conversation
@@ -47,6 +51,16 @@ class AIProvider(abc.ABC):
         return self.chat(system, user, expect_json=expect_json)
 
     # -- shared helpers -------------------------------------------------
+    def _require_model(self) -> str:
+        model = (self.s.ai_model or "").strip()
+        if not model:
+            raise AIError(
+                "Nenhum modelo selecionado. Abra o painel → Config e use "
+                "'Detectar' para listar os modelos do provedor.",
+                transient=False,
+            )
+        return model
+
     def _get(self, url: str, headers: dict, timeout: float = 30.0) -> dict:
         try:
             resp = httpx.get(url, headers=headers, timeout=timeout)
@@ -112,7 +126,7 @@ class OpenAICompatible(AIProvider):
     def chat(self, system: str, user: str, *, expect_json: bool = False) -> str:
         base = (self.s.ai_base_url or "https://api.openai.com/v1").rstrip("/")
         payload = {
-            "model": self.s.ai_model,
+            "model": self._require_model(),
             "messages": [{"role": "system", "content": system},
                          {"role": "user", "content": user}],
             "temperature": self.s.ai_temperature,
@@ -127,7 +141,7 @@ class OpenAICompatible(AIProvider):
     def chat_messages(self, messages: list[dict], *, expect_json: bool = False) -> str:
         base = (self.s.ai_base_url or "https://api.openai.com/v1").rstrip("/")
         payload = {
-            "model": self.s.ai_model,
+            "model": self._require_model(),
             "messages": messages,
             "temperature": self.s.ai_temperature,
             "max_tokens": self.s.ai_max_tokens,
@@ -144,7 +158,7 @@ class OpenAICompatible(AIProvider):
         b64 = base64.b64encode(image_bytes).decode("ascii")
         data_uri = f"data:{mime_type};base64,{b64}"
         payload = {
-            "model": self.s.ai_model,
+            "model": self._require_model(),
             "messages": [
                 {"role": "system", "content": system},
                 {
@@ -192,7 +206,7 @@ class Ollama(OpenAICompatible):
             # native ollama endpoint supports format=json reliably
             base = self.s.ai_base_url.rstrip("/").removesuffix("/v1")
             payload = {
-                "model": self.s.ai_model,
+                "model": self._require_model(),
                 "messages": [{"role": "system", "content": system},
                              {"role": "user", "content": user}],
                 "stream": False, "format": "json",
@@ -226,9 +240,6 @@ class Anthropic(AIProvider):
         super().__init__(settings)
         if not self.s.ai_base_url:
             self.s.ai_base_url = "https://api.anthropic.com"
-        if not self.s.ai_model or self.s.ai_model in (
-                "local-model", "default"):
-            self.s.ai_model = "claude-3-5-haiku-latest"
 
     def _messages_url(self) -> str:
         base = (self.s.ai_base_url or "https://api.anthropic.com").rstrip("/")
@@ -248,7 +259,7 @@ class Anthropic(AIProvider):
 
     def chat(self, system: str, user: str, *, expect_json: bool = False) -> str:
         payload = {
-            "model": self.s.ai_model,
+            "model": self._require_model(),
             "max_tokens": self.s.ai_max_tokens,
             "system": system,
             "messages": [{"role": "user", "content": user}],
@@ -261,7 +272,7 @@ class Anthropic(AIProvider):
                            if m.get("role") == "system")
         convo = [m for m in messages if m.get("role") != "system"]
         payload = {
-            "model": self.s.ai_model,
+            "model": self._require_model(),
             "max_tokens": self.s.ai_max_tokens,
             "messages": convo,
         }
@@ -290,9 +301,6 @@ class Gemini(OpenAICompatible):
         if not self.s.ai_base_url:
             self.s.ai_base_url = (
                 "https://generativelanguage.googleapis.com/v1beta/openai")
-        if not self.s.ai_model or self.s.ai_model in (
-                "local-model", "default"):
-            self.s.ai_model = "gemini-2.0-flash"
 
 
 class Groq(OpenAICompatible):
@@ -304,9 +312,6 @@ class Groq(OpenAICompatible):
         super().__init__(settings)
         if not self.s.ai_base_url:
             self.s.ai_base_url = "https://api.groq.com/openai/v1"
-        if not self.s.ai_model or self.s.ai_model in (
-                "local-model", "gpt-4o-mini", "default"):
-            self.s.ai_model = "openai/gpt-oss-120b"
 
 
 _PROVIDERS = {
@@ -326,57 +331,46 @@ _PROVIDERS = {
 
 
 # Catálogo exibido pela UI. Fonte única de verdade sobre provedores:
-# id (usado em ai_provider) -> rótulo, se exige chave, base URL e modelo padrão.
+# id (usado em ai_provider) -> rótulo, se exige chave e URL base padrão.
+# Não há modelo padrão: a UI detecta os modelos do provedor via /api/models.
 # "custom_base" mostra o campo de URL base na UI. "key_hint" é só placeholder.
 PROVIDER_CATALOG = [
     {"id": "gemini", "label": "Google Gemini", "needs_key": True,
      "default_base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
-     "default_model": "gemini-2.0-flash", "custom_base": False,
-     "key_hint": "AIzaSy..."},
+     "custom_base": False, "key_hint": "AIzaSy..."},
     {"id": "openai", "label": "OpenAI", "needs_key": True,
      "default_base_url": "https://api.openai.com/v1",
-     "default_model": "gpt-4o-mini", "custom_base": False,
-     "key_hint": "sk-..."},
+     "custom_base": False, "key_hint": "sk-..."},
     {"id": "anthropic", "label": "Anthropic Claude", "needs_key": True,
      "default_base_url": "https://api.anthropic.com",
-     "default_model": "claude-3-5-haiku-latest", "custom_base": False,
-     "key_hint": "sk-ant-..."},
+     "custom_base": False, "key_hint": "sk-ant-..."},
     {"id": "groq", "label": "Groq", "needs_key": True,
      "default_base_url": "https://api.groq.com/openai/v1",
-     "default_model": "llama-3.3-70b-versatile", "custom_base": False,
-     "key_hint": "gsk_..."},
+     "custom_base": False, "key_hint": "gsk_..."},
     {"id": "openrouter", "label": "OpenRouter", "needs_key": True,
      "default_base_url": "https://openrouter.ai/api/v1",
-     "default_model": "", "custom_base": False,
-     "key_hint": "sk-or-..."},
+     "custom_base": False, "key_hint": "sk-or-..."},
     {"id": "nvidia", "label": "NVIDIA NIM", "needs_key": True,
      "default_base_url": "https://integrate.api.nvidia.com/v1",
-     "default_model": "meta/llama-3.3-70b-instruct", "custom_base": False,
-     "key_hint": "nvapi-..."},
+     "custom_base": False, "key_hint": "nvapi-..."},
     {"id": "deepseek", "label": "DeepSeek", "needs_key": True,
      "default_base_url": "https://api.deepseek.com/v1",
-     "default_model": "deepseek-chat", "custom_base": False,
-     "key_hint": "sk-..."},
+     "custom_base": False, "key_hint": "sk-..."},
     {"id": "xai", "label": "xAI (Grok)", "needs_key": True,
      "default_base_url": "https://api.x.ai/v1",
-     "default_model": "grok-2-1212", "custom_base": False,
-     "key_hint": "xai-..."},
+     "custom_base": False, "key_hint": "xai-..."},
     {"id": "together", "label": "Together AI", "needs_key": True,
      "default_base_url": "https://api.together.xyz/v1",
-     "default_model": "meta-llama/Llama-3.3-70b-Instruct-Turbo", "custom_base": False,
-     "key_hint": "..."},
+     "custom_base": False, "key_hint": "..."},
     {"id": "mistral", "label": "Mistral AI", "needs_key": True,
      "default_base_url": "https://api.mistral.ai/v1",
-     "default_model": "mistral-small-latest", "custom_base": False,
-     "key_hint": "..."},
+     "custom_base": False, "key_hint": "..."},
     {"id": "ollama", "label": "Ollama (local)", "needs_key": False,
      "default_base_url": "http://localhost:11434/v1",
-     "default_model": "", "custom_base": True,
-     "key_hint": ""},
+     "custom_base": True, "key_hint": ""},
     {"id": "openai-compatible", "label": "Customizado (OpenAI-compatible)", "needs_key": False,
      "default_base_url": "",
-     "default_model": "", "custom_base": True,
-     "key_hint": ""},
+     "custom_base": True, "key_hint": ""},
 ]
 
 
@@ -400,6 +394,24 @@ def get_runtime_api_key() -> str | None:
 CLOUD_PROVIDERS = ("gemini", "openai", "openrouter", "anthropic", "groq",
                      "nvidia", "deepseek", "xai", "together", "mistral")
 
+# Base URL padrão por provedor (endpoints OpenAI-compatible). Sem isso,
+# provedores mapeados para OpenAICompatible (nvidia, deepseek, xai,
+# together, mistral) enviariam a chave para api.openai.com e seriam
+# rejeitados. get_provider injeta quando ai_base_url está vazio.
+DEFAULT_BASE_URLS = {
+    "openai": "https://api.openai.com/v1",
+    "openrouter": "https://openrouter.ai/api/v1",
+    "groq": "https://api.groq.com/openai/v1",
+    "gemini": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "anthropic": "https://api.anthropic.com",
+    "ollama": "http://localhost:11434/v1",
+    "nvidia": "https://integrate.api.nvidia.com/v1",
+    "deepseek": "https://api.deepseek.com/v1",
+    "xai": "https://api.x.ai/v1",
+    "together": "https://api.together.xyz/v1",
+    "mistral": "https://api.mistral.ai/v1",
+}
+
 
 def get_provider(settings) -> AIProvider:
     if _runtime_api_key and not getattr(settings, "ai_api_key", ""):
@@ -417,5 +429,7 @@ def get_provider(settings) -> AIProvider:
             f"Provedor de IA desconhecido: {prov_name!r}.",
             transient=False,
         )
+    if not getattr(settings, "ai_base_url", ""):
+        settings.ai_base_url = DEFAULT_BASE_URLS.get(prov_name, "")
     return cls(settings)
 

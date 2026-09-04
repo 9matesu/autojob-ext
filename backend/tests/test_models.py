@@ -24,7 +24,39 @@ def test_providers_catalog_lists_all_ids():
     for p in providers:
         assert p["label"]
         assert isinstance(p["needs_key"], bool)
-        assert "default_model" in p
+        assert "default_model" not in p  # sem modelo padrão: detecção dinâmica
+
+
+def test_get_provider_injects_default_base_url(monkeypatch):
+    from app.services.ai import gateway as gw
+    from app.config import Settings
+    monkeypatch.setattr(gw, "_runtime_api_key", None)
+    for pid, host in (
+        ("nvidia", "integrate.api.nvidia.com"),
+        ("deepseek", "api.deepseek.com"),
+        ("xai", "api.x.ai"),
+        ("together", "api.together.xyz"),
+        ("mistral", "api.mistral.ai"),
+        ("groq", "api.groq.com"),
+        ("gemini", "generativelanguage.googleapis.com"),
+    ):
+        s = Settings(ai_provider=pid, ai_api_key="k", ai_model="m")
+        prov = gw.get_provider(s)
+        assert host in s.ai_base_url, f"{pid} -> {s.ai_base_url}"
+        assert isinstance(prov, gw.AIProvider)
+
+
+def test_chat_without_model_fails_loudly(monkeypatch):
+    from app.services.ai import gateway as gw
+    from app.config import Settings
+    monkeypatch.setattr(gw, "_runtime_api_key", None)
+    s = Settings(ai_provider="openai", ai_api_key="k", ai_model="")
+    prov = gw.get_provider(s)
+    with pytest.raises(gw.AIError):
+        prov.chat("sys", "user")
+    s2 = Settings(ai_provider="anthropic", ai_api_key="k", ai_model="")
+    with pytest.raises(gw.AIError):
+        gw.get_provider(s2).chat("sys", "user")
 
 
 def test_providers_catalog_leaks_no_secrets():
@@ -49,6 +81,47 @@ def test_models_unreachable_host_fails_loudly():
     })
     assert resp.status_code in (400, 500)
     assert resp.json()["detail"]
+
+
+def test_models_probe_selects_working(monkeypatch):
+    from app.services.ai import gateway as gw
+    import app.api.routes as routes
+
+    class FakeProv:
+        def __init__(self, settings):
+            self.s = settings
+
+        def models(self):
+            return ["blocked-model", "good-model", "other"]
+
+        def chat(self, system, user, *, expect_json=False):
+            if self.s.ai_model != "good-model":
+                raise gw.AIError("blocked", transient=False)
+            return "ok"
+
+    monkeypatch.setattr(routes.gateway, "get_provider", lambda s: FakeProv(s))
+    resp = client.post("/api/models", json={"ai_provider": "groq", "probe": True})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["working"] == "good-model"
+    assert body["models"] == ["blocked-model", "good-model", "other"]
+
+
+def test_models_without_probe_skips_chat(monkeypatch):
+    from app.services.ai import gateway as gw
+
+    class NoChatProv:
+        def models(self):
+            return ["a", "b"]
+
+        def chat(self, *a, **k):
+            raise AssertionError("chat não deve rodar sem probe")
+
+    import app.api.routes as routes
+    monkeypatch.setattr(routes.gateway, "get_provider", lambda s: NoChatProv())
+    resp = client.post("/api/models", json={"ai_provider": "groq"})
+    assert resp.status_code == 200
+    assert resp.json()["working"] == ""
 
 
 def test_models_parsing_openai_compatible(monkeypatch):
@@ -150,7 +223,7 @@ def test_json_word_present_in_all_json_mode_prompts(monkeypatch):
     import app.api.routes as routes
     from app.config import Settings
     monkeypatch.setattr(routes.gateway, "get_provider", lambda s: Probe(
-        Settings(ai_provider="openai", ai_api_key="x")))
+        Settings(ai_provider="openai", ai_api_key="x", ai_model="gpt-4o-mini")))
     resp = client.post("/api/settings/test", json={
         "ai_provider": "openai",
         "ai_api_key": "x",

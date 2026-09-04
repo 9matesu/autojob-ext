@@ -8,7 +8,7 @@ export const SettingsPanel: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [catalog, setCatalog] = useState<ProviderInfo[]>([]);
   const [aiProvider, setAiProvider] = useState('gemini');
-  const [aiModel, setAiModel] = useState('gemini-2.0-flash');
+  const [aiModel, setAiModel] = useState('');
   const [aiApiKey, setAiApiKey] = useState('');
   const [aiBaseUrl, setAiBaseUrl] = useState('');
   const [baseProfile, setBaseProfile] = useState<MasterCandidate | null>(null);
@@ -40,6 +40,11 @@ export const SettingsPanel: React.FC = () => {
     load();
   }, []);
 
+  const effectiveBaseUrl = () => {
+    const ent = catalog.find((p) => p.id === aiProvider);
+    return aiBaseUrl || ent?.default_base_url || '';
+  };
+
   const handleTest = async () => {
     setTesting(true);
     setTestResult(null);
@@ -48,7 +53,7 @@ export const SettingsPanel: React.FC = () => {
         ai_provider: aiProvider,
         ai_api_key: aiApiKey,
         ai_model: aiModel,
-        ...(aiBaseUrl ? { ai_base_url: aiBaseUrl } : {}),
+        ai_base_url: effectiveBaseUrl(),
       });
       setTestResult({ ok: true, message: 'Conexão com a IA verificada com sucesso.' });
     } catch (err: any) {
@@ -64,8 +69,8 @@ export const SettingsPanel: React.FC = () => {
       await saveSettings({
         ai_provider: aiProvider,
         ai_model: aiModel,
+        ai_base_url: effectiveBaseUrl(),
         ...(aiApiKey ? { ai_api_key: aiApiKey } : {}),
-        ...(aiBaseUrl ? { ai_base_url: aiBaseUrl } : {}),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);

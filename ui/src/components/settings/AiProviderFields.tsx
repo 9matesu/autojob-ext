@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { detectModels, type ProviderInfo } from '../../services/api';
 
@@ -30,37 +30,34 @@ export const AiProviderFields: React.FC<AiProviderFieldsProps> = ({
   const [models, setModels] = useState<string[]>([]);
   const [detecting, setDetecting] = useState(false);
   const [detectMsg, setDetectMsg] = useState('');
+  const autoDetectedFor = useRef('');
 
   const entry = catalog.find((p) => p.id === provider);
   const listId = React.useId();
 
-  const handleProvider = (id: string) => {
-    const next = catalog.find((p) => p.id === id);
-    onProviderChange(id);
-    if (next?.default_model) onModelChange(next.default_model);
-    setModels([]);
-    setDetectMsg('');
-  };
-
-  const handleDetect = async () => {
-    if (entry?.needs_key && !apiKey) {
-      setDetectMsg('Informe a chave de API para listar os modelos.');
-      return;
-    }
+  const autoDetect = async (pvId: string, key: string, base: string) => {
+    if (!pvId) return;
+    const ent = catalog.find((p) => p.id === pvId);
     setDetecting(true);
     setDetectMsg('');
     try {
-      const list = await detectModels({
-        ai_provider: provider,
-        ...(apiKey ? { ai_api_key: apiKey } : {}),
-        ...(baseUrl ? { ai_base_url: baseUrl } : {}),
+      const { models: list, working } = await detectModels({
+        ai_provider: pvId,
+        ...(key ? { ai_api_key: key } : {}),
+        ai_base_url: base || ent?.default_base_url || '',
       });
       setModels(list);
-      setDetectMsg(
-        list.length > 0
-          ? `${list.length} modelo(s) detectado(s) — escolha na lista ou digite.`
-          : 'O provedor não listou modelos — digite o nome manualmente.'
-      );
+      const chosen = working || list[0] || '';
+      if (chosen) {
+        onModelChange(chosen);
+        setDetectMsg(
+          working
+            ? `${list.length} modelo(s) — selecionado (responde de verdade): ${working}`
+            : `${list.length} modelo(s) detectado(s) — primeiro selecionado: ${list[0]}`,
+        );
+      } else {
+        setDetectMsg('O provedor não listou modelos — digite o nome manualmente.');
+      }
     } catch (err: any) {
       setModels([]);
       setDetectMsg(err.message || 'Falha ao listar modelos');
@@ -68,6 +65,24 @@ export const AiProviderFields: React.FC<AiProviderFieldsProps> = ({
       setDetecting(false);
     }
   };
+
+  const handleProvider = (id: string) => {
+    onProviderChange(id);
+    onModelChange('');
+    setModels([]);
+    autoDetectedFor.current = id;
+    void autoDetect(id, apiKey, baseUrl);
+  };
+
+  // Primeira detecção automática quando o provedor chega do backend
+  // e ainda não há modelo salvo (chave pode já estar no SQLite).
+  useEffect(() => {
+    if (!provider || model || !catalog.length) return;
+    if (autoDetectedFor.current === provider) return;
+    autoDetectedFor.current = provider;
+    void autoDetect(provider, apiKey, baseUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provider, model, catalog]);
 
   return (
     <>
@@ -111,13 +126,13 @@ export const AiProviderFields: React.FC<AiProviderFieldsProps> = ({
       )}
 
       <div>
-        <label className="text-[10px] font-bold uppercase tracking-wider block mb-1">Nome do Modelo</label>
+        <label className="text-[10px] font-bold uppercase tracking-wider block mb-1">Modelo</label>
         <div className="flex items-center gap-2">
           <input
             type="text"
             value={model}
             onChange={(e) => onModelChange(e.target.value)}
-            placeholder="Ex: gemini-2.0-flash"
+            placeholder={detecting ? 'detectando...' : 'detectado automaticamente'}
             list={listId}
             className="brutal-input flex-1"
           />
@@ -128,7 +143,7 @@ export const AiProviderFields: React.FC<AiProviderFieldsProps> = ({
           </datalist>
           <button
             type="button"
-            onClick={handleDetect}
+            onClick={() => void autoDetect(provider, apiKey, baseUrl)}
             disabled={detecting}
             className="brutal-btn px-3 py-2 text-[11px] shrink-0 flex items-center gap-1.5"
             title="Detectar modelos disponíveis no provedor"

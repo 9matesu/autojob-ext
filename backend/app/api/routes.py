@@ -21,9 +21,11 @@ class SettingsPayload(BaseModel):
     ai_model: str | None = None
     ai_api_key: str | None = None
     ai_base_url: str | None = None
+    ai_temperature: float | None = None
     default_template: str | None = None
     default_lang: str | None = None
     compiler_preference: str | None = None
+    probe: bool | None = None
 
 class ProfilePayload(BaseModel):
     name: str | None = None
@@ -122,21 +124,43 @@ def list_providers():
 def list_models(payload: SettingsPayload):
     """List model IDs available on a provider using the given credentials.
 
-    Uses a transient settings object — nothing is persisted. Returns exactly
-    what the provider API lists; never fabricates. Empty list + 200 when the
-    provider has no listing endpoint; 400 with a clear message otherwise.
+    Fields not provided fall back to the stored settings (e.g. the saved API
+    key). Nothing is persisted here. Returns exactly what the provider API
+    lists; never fabricates. Empty list + 200 when the provider has no
+    listing endpoint; 400 with a clear message otherwise.
     """
-    from ..config import Settings
-    s = Settings(
-        ai_provider=payload.ai_provider or "gemini",
-        ai_api_key=payload.ai_api_key or "",
-        ai_base_url=payload.ai_base_url or "",
-        ai_model=payload.ai_model or "",
-    )
+    s = get_settings()
+    if payload.ai_provider:
+        s.ai_provider = payload.ai_provider
+    if payload.ai_api_key:
+        s.ai_api_key = payload.ai_api_key
+    if payload.ai_base_url:
+        s.ai_base_url = payload.ai_base_url
+    if payload.ai_model:
+        s.ai_model = payload.ai_model
     try:
         prov = gateway.get_provider(s)
         models = prov.models()
-        return {"models": models, "count": len(models)}
+        working = ""
+        if payload.probe and models:
+            # Probe dinâmico: testa cada candidato com um chat mínimo até
+            # achar um que realmente responda (modelos bloqueados/TTS
+            # falham aqui). Custa alguns tokens; roda só ao trocar provedor.
+            orig_max = s.ai_max_tokens
+            s.ai_max_tokens = 8
+            try:
+                for cand in models[:15]:
+                    s.ai_model = cand
+                    try:
+                        prov.chat("Responda apenas: ok", "teste", expect_json=False)
+                        working = cand
+                        break
+                    except Exception:
+                        continue
+            finally:
+                s.ai_max_tokens = orig_max
+                s.ai_model = working or ""
+        return {"models": models, "count": len(models), "working": working}
     except AIError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

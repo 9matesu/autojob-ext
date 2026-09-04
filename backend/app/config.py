@@ -22,8 +22,8 @@ load_dotenv()
 
 @dataclass
 class Settings:
-    ai_provider: str = "gemini"  # "gemini" | "openai" | "ollama" | "openrouter" | "anthropic" | "groq"
-    ai_model: str = "gemini-2.0-flash"
+    ai_provider: str = "gemini"  # "gemini" | "openai" | "ollama" | "openrouter" | "anthropic" | "groq" | "nvidia" | "deepseek" | "xai" | "together" | "mistral"
+    ai_model: str = ""  # sem padrão: detectado via /api/models
     ai_api_key: str = ""
     ai_base_url: str = ""
     ai_temperature: float = 0.2

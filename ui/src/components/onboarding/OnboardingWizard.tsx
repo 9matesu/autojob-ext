@@ -60,7 +60,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
 
   const [aiProvider, setAiProvider] = useState(health.ai_provider || 'gemini');
   const [aiApiKey, setAiApiKey] = useState('');
-  const [aiModel, setAiModel] = useState(health.ai_model || 'gemini-2.0-flash');
+  const [aiModel, setAiModel] = useState(health.ai_model || '');
   const [aiBaseUrl, setAiBaseUrl] = useState('');
   const [catalog, setCatalog] = useState<ProviderInfo[]>([]);
   const [testingAi, setTestingAi] = useState(false);
@@ -106,18 +106,20 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
 
   const handleTestAi = async () => {
     const entry = catalog.find((p) => p.id === aiProvider);
-    if (!aiApiKey && (entry ? entry.needs_key : aiProvider !== 'ollama')) {
+    const needsKey = entry ? entry.needs_key : aiProvider !== 'ollama';
+    if (!aiApiKey && needsKey && !health.has_api_key) {
       setAiTestResult({ ok: false, message: 'Insira uma chave de API primeiro' });
       return;
     }
     setTestingAi(true);
     setAiTestResult(null);
     try {
+      const ent = catalog.find((p) => p.id === aiProvider);
       await testAiConnection({
         ai_provider: aiProvider,
         ai_api_key: aiApiKey,
         ai_model: aiModel,
-        ...(aiBaseUrl ? { ai_base_url: aiBaseUrl } : {}),
+        ai_base_url: aiBaseUrl || ent?.default_base_url || '',
       });
       setAiTestResult({ ok: true, message: 'Conexão bem-sucedida. Modelo IA pronto.' });
     } catch (err: any) {
@@ -210,11 +212,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
   const handleFinish = async () => {
     try {
       await saveMasterProfile(profile);
+      const ent = catalog.find((p) => p.id === aiProvider);
       await saveSettings({
         ai_provider: aiProvider,
         ai_model: aiModel,
+        ai_base_url: aiBaseUrl || ent?.default_base_url || '',
         ...(aiApiKey ? { ai_api_key: aiApiKey } : {}),
-        ...(aiBaseUrl ? { ai_base_url: aiBaseUrl } : {}),
       });
       onComplete();
     } catch (err: any) {

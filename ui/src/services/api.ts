@@ -145,16 +145,15 @@ export interface ProviderInfo {
   label: string;
   needs_key: boolean;
   default_base_url: string;
-  default_model: string;
   custom_base: boolean;
   key_hint: string;
 }
 
 const FALLBACK_PROVIDERS: ProviderInfo[] = [
-  { id: 'gemini', label: 'Google Gemini', needs_key: true, default_base_url: '', default_model: 'gemini-2.0-flash', custom_base: false, key_hint: 'AIzaSy...' },
-  { id: 'openai', label: 'OpenAI', needs_key: true, default_base_url: '', default_model: 'gpt-4o-mini', custom_base: false, key_hint: 'sk-...' },
-  { id: 'ollama', label: 'Ollama (local)', needs_key: false, default_base_url: '', default_model: '', custom_base: true, key_hint: '' },
-  { id: 'openai-compatible', label: 'Customizado (OpenAI-compatible)', needs_key: false, default_base_url: '', default_model: '', custom_base: true, key_hint: '' },
+  { id: 'gemini', label: 'Google Gemini', needs_key: true, default_base_url: '', custom_base: false, key_hint: 'AIzaSy...' },
+  { id: 'openai', label: 'OpenAI', needs_key: true, default_base_url: '', custom_base: false, key_hint: 'sk-...' },
+  { id: 'ollama', label: 'Ollama (local)', needs_key: false, default_base_url: '', custom_base: true, key_hint: '' },
+  { id: 'openai-compatible', label: 'Customizado (OpenAI-compatible)', needs_key: false, default_base_url: '', custom_base: true, key_hint: '' },
 ];
 
 export async function fetchProviders(): Promise<ProviderInfo[]> {
@@ -169,18 +168,21 @@ export async function fetchProviders(): Promise<ProviderInfo[]> {
   }
 }
 
-export async function detectModels(payload: { ai_provider: string; ai_api_key?: string; ai_base_url?: string }): Promise<string[]> {
+export async function detectModels(payload: { ai_provider: string; ai_api_key?: string; ai_base_url?: string }): Promise<{ models: string[]; working: string }> {
   const res = await fetch(`${API_BASE}/models`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, probe: true }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || 'Falha ao listar modelos');
   }
   const data = await res.json();
-  return Array.isArray(data.models) ? (data.models as string[]) : [];
+  return {
+    models: Array.isArray(data.models) ? (data.models as string[]) : [],
+    working: typeof data.working === 'string' ? data.working : '',
+  };
 }
 
 export interface MasterCandidate {

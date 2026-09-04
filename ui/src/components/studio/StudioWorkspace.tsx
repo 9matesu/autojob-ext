@@ -138,9 +138,9 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
   };
 
   return (
-    <div className="flex h-screen w-screen bg-white text-black overflow-hidden select-none">
-      {/* LEFT PANE: Editor (50%) */}
-      <div className="w-1/2 flex flex-col hairline-r bg-white overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-screen w-screen bg-white text-black overflow-hidden select-none">
+      {/* LEFT PANE: Editor (empilha no estreito) */}
+      <div className="w-full h-1/2 lg:h-full lg:w-1/2 flex flex-col bg-white overflow-hidden border-b lg:border-b-0 border-[#1a1a1a]">
         {/* Top Job Context Bar */}
         <div className="p-4 hairline-b bg-white flex items-center justify-between">
           <div>
@@ -633,8 +633,8 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
         </div>
       </div>
 
-      {/* RIGHT PANE: Live PDF Viewer (50%) */}
-      <div className="w-1/2 flex flex-col bg-neutral-100">
+      {/* RIGHT PANE: Live PDF Viewer */}
+      <div className="w-full h-1/2 lg:h-full lg:w-1/2 flex flex-col bg-neutral-100">
         {/* Viewer Toolbar */}
         <div className="p-3 hairline-b bg-white flex items-center justify-between">
           <span className="text-xs font-bold flex items-center gap-2">

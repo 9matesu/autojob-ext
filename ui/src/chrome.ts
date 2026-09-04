@@ -69,6 +69,16 @@ export async function loadStudioPayload<T>(): Promise<T | null> {
 }
 
 export function openStudioTab(): void {
-  if (isExtension) chrome.tabs.create({ url: chrome.runtime.getURL('studio.html') });
-  else window.open('studio.html', '_blank');
+  if (isExtension) {
+    chrome.tabs.create({ url: chrome.runtime.getURL('studio.html') });
+    // O editor abre em aba própria: fecha o painel lateral para liberar
+    // a janela (Chrome 141+; sem close disponível, o painel apenas fica).
+    try {
+      chrome.sidePanel
+        ?.close?.({ windowId: chrome.windows.WINDOW_ID_CURRENT })
+        ?.catch?.(() => {});
+    } catch {}
+  } else {
+    window.open('studio.html', '_blank');
+  }
 }

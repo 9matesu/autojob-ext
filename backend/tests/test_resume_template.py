@@ -193,7 +193,7 @@ def test_merge_tailored_falls_back_to_master():
               "leadership": [{"title": "Lider"}]}
     merged = _merge_tailored(master, {})
     assert merged["leadership"] == [{"title": "Lider"}]
-    assert merged["summary"] == "M"
+    assert merged["summary"] == "M"
 
 
 def test_compile_pdf_retries_transient_failure(tmp_path, monkeypatch):
@@ -224,3 +224,48 @@ def test_compile_pdf_retries_transient_failure(tmp_path, monkeypatch):
     pdf = engine.compile_pdf("% tex", work)
     assert pdf.exists()
     assert calls["n"] >= 2
+
+
+TEX_SAMPLE = r"""\documentclass{article}
+\begin{document}
+\begin{center}
+    {\LARGE \textbf{Mateus Santos}}
+    \\ [0.1cm]
+    Cruzeiro, SP {\textbullet} \href{mailto:mcos@ex.com}{mcos@ex.com}
+\end{center}
+\section{Experiência}
+    \cventry{Objective}{Cruzeiro, SP}{Designer Gráfico}{2025}
+        \begin{itemize}
+            \item Otimizou fluxos, reduzindo demandas em 35\%.
+        \end{itemize}
+\section{Habilidades}
+    \begin{itemize}
+        \item \textbf{Técnicas:} React, Python, Docker
+        \item \textbf{Idiomas:} Inglês: fluente
+    \end{itemize}
+\section{Educação}
+    \cventry{FATEC}{Cruzeiro, SP}{Tecnólogo em ADS}{2024 - 2027}
+\end{document}"""
+
+
+def test_parse_tex_full_structure():
+    p = importer.parse_tex(TEX_SAMPLE)
+    assert p["personal"]["name"] == "Mateus Santos"
+    assert p["personal"]["email"] == "mcos@ex.com"
+    exp = p["experience"][0]
+    assert exp["company"] == "Objective"
+    assert exp["title"] == "Designer Gráfico"
+    assert exp["location"] == "Cruzeiro, SP"
+    assert exp["description"] == ["Otimizou fluxos, reduzindo demandas em 35%."]
+    assert p["skills"] == ["React", "Python", "Docker"]
+    assert p["languages"] == [{"name": "Inglês", "level": "fluente"}]
+    edu = p["education"][0]
+    assert edu["institution"] == "FATEC"
+    assert edu["degree"] == "Tecnólogo em ADS"
+    assert edu["year"] == "2024 - 2027"
+
+
+def test_parse_resume_text_detects_tex():
+    p = importer.parse_resume_text(TEX_SAMPLE)
+    assert p["personal"]["name"] == "Mateus Santos"
+    assert p["experience"][0]["company"] == "Objective"

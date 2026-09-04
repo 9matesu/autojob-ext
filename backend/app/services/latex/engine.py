@@ -98,11 +98,14 @@ def _bullets(entry: dict) -> list[str]:
 
 
 def _names(items) -> str:
-    """Join a list of skill/language entries as a comma-separated string."""
+    """Join a list of skill/language entries as a comma-separated string.
+    Language dicts keep their level: "Inglês: fluente"."""
     out = []
     for it in items or []:
         if isinstance(it, dict):
-            out.append(it.get("name") or "")
+            name = it.get("name") or ""
+            level = it.get("level") or ""
+            out.append(f"{name}: {level}" if name and level else name)
         else:
             out.append(str(it))
     return ", ".join(x for x in out if x)

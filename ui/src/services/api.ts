@@ -36,9 +36,9 @@ export interface CandidateProfile {
   leadership?: ExperienceItem[];
   education: EducationItem[];
   skills: string[];
-  projects?: Array<{ name: string; description?: string }>;
+  projects?: Array<{ name: string; role?: string; location?: string; period?: string; description?: string[] | string }>;
   certifications?: Array<{ name: string }>;
-  languages?: Array<{ name: string }>;
+  languages?: Array<{ name: string; level?: string }>;
 }
 
 export interface JobData {

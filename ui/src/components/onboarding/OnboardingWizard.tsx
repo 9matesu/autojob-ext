@@ -183,6 +183,30 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
       ],
     });
   };
+
+  const handleAddProject = () => {
+    setProfile({
+      ...profile,
+      projects: [
+        ...(profile.projects || []),
+        { name: '', description: '' },
+      ],
+    });
+  };
+
+  const handleAddLanguage = () => {
+    setProfile({
+      ...profile,
+      languages: [...(profile.languages || []), { name: '' }],
+    });
+  };
+
+  const handleAddCertification = () => {
+    setProfile({
+      ...profile,
+      certifications: [...(profile.certifications || []), { name: '' }],
+    });
+  };
   const handleFinish = async () => {
     try {
       await saveMasterProfile(profile);
@@ -736,6 +760,152 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
               </div>
             </section>
 
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <SectionLabel index="07" title={`Projetos (${(profile.projects || []).length})`} />
+                <button type="button" onClick={handleAddProject} className="brutal-btn flex items-center gap-1.5 px-3 py-1.5 text-[10px]">
+                  <Plus className="w-3.5 h-3.5" />
+                  Adicionar Projeto
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {(profile.projects || []).map((proj, idx) => (
+                  <div key={idx} className="brutal-card p-3.5 relative">
+                    <button
+                      type="button"
+                      onClick={() => setProfile({ ...profile, projects: (profile.projects || []).filter((_, i) => i !== idx) })}
+                      className="absolute top-3 right-3 text-neutral-500 hover:bg-black hover:text-white transition-colors cursor-pointer p-1"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-6">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-neutral-600 block mb-0.5">Nome</label>
+                        <input
+                          type="text"
+                          value={proj.name}
+                          onChange={(e) => {
+                            const updated = [...(profile.projects || [])];
+                            updated[idx] = { ...updated[idx], name: e.target.value };
+                            setProfile({ ...profile, projects: updated });
+                          }}
+                          placeholder="Ex: digiPat"
+                          className="brutal-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-neutral-600 block mb-0.5">Período</label>
+                        <input
+                          type="text"
+                          value={proj.period || ''}
+                          onChange={(e) => {
+                            const updated = [...(profile.projects || [])];
+                            updated[idx] = { ...updated[idx], period: e.target.value };
+                            setProfile({ ...profile, projects: updated });
+                          }}
+                          placeholder="Ex: 2025"
+                          className="brutal-input"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <label className="text-[10px] font-bold uppercase text-neutral-600 block mb-0.5">Descrição / destaques</label>
+                      <textarea
+                        rows={2}
+                        value={Array.isArray(proj.description) ? proj.description.join('\n') : proj.description || ''}
+                        onChange={(e) => {
+                          const updated = [...(profile.projects || [])];
+                          updated[idx] = { ...updated[idx], description: e.target.value };
+                          setProfile({ ...profile, projects: updated });
+                        }}
+                        className="brutal-input"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <SectionLabel index="08" title={`Idiomas (${(profile.languages || []).length})`} />
+                <button type="button" onClick={handleAddLanguage} className="brutal-btn flex items-center gap-1.5 px-3 py-1.5 text-[10px]">
+                  <Plus className="w-3.5 h-3.5" />
+                  Adicionar Idioma
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(profile.languages || []).map((lang, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={lang.name}
+                      onChange={(e) => {
+                        const updated = [...(profile.languages || [])];
+                        updated[idx] = { ...updated[idx], name: e.target.value };
+                        setProfile({ ...profile, languages: updated });
+                      }}
+                      placeholder="Idioma (Ex: Inglês)"
+                      className="brutal-input flex-1"
+                    />
+                    <input
+                      type="text"
+                      value={lang.level || ''}
+                      onChange={(e) => {
+                        const updated = [...(profile.languages || [])];
+                        updated[idx] = { ...updated[idx], level: e.target.value };
+                        setProfile({ ...profile, languages: updated });
+                      }}
+                      placeholder="Nível (Ex: fluente)"
+                      className="brutal-input flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setProfile({ ...profile, languages: (profile.languages || []).filter((_, i) => i !== idx) })}
+                      className="text-neutral-500 hover:bg-black hover:text-white cursor-pointer p-1.5 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <SectionLabel index="09" title={`Certificações (${(profile.certifications || []).length})`} />
+                <button type="button" onClick={handleAddCertification} className="brutal-btn flex items-center gap-1.5 px-3 py-1.5 text-[10px]">
+                  <Plus className="w-3.5 h-3.5" />
+                  Adicionar Certificação
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(profile.certifications || []).map((cert, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={cert.name}
+                      onChange={(e) => {
+                        const updated = [...(profile.certifications || [])];
+                        updated[idx] = { ...updated[idx], name: e.target.value };
+                        setProfile({ ...profile, certifications: updated });
+                      }}
+                      placeholder="Nome da certificação"
+                      className="brutal-input flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setProfile({ ...profile, certifications: (profile.certifications || []).filter((_, i) => i !== idx) })}
+                      className="text-neutral-500 hover:bg-black hover:text-white cursor-pointer p-1.5 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+
             <div className="flex items-center justify-between pt-5 hairline-t">
               <button onClick={() => setStep(1)} className="brutal-btn flex items-center gap-1.5 px-4 py-2 text-xs">
                 <ArrowLeft className="w-4 h-4" />
@@ -755,7 +925,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
         <main className="flex-grow overflow-y-auto px-4 py-6">
           <div className="max-w-xl mx-auto space-y-6">
             <section>
-              <SectionLabel index="07" title="Provedor de Inteligencia Artificial" />
+              <SectionLabel index="10" title="Provedor de Inteligencia Artificial" />
               <p className="text-xs text-neutral-600 font-mono -mt-1 mb-3">
                 Selecione o modelo que irá analisar as páginas de vaga e adaptar os currículos.
               </p>

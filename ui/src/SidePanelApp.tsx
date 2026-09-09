@@ -133,7 +133,7 @@ export function SidePanelApp() {
     setResult(null);
     try {
       await startCaptureSelection();
-      setStatusMsg('Clique no painel → confira a prévia → CAPTURAR (Esc cancela)');
+      setStatusMsg('Clique no painel → edite a prévia se quiser → CAPTURAR (Esc cancela)');
     } catch (e: any) {
       setError(e.message || 'Falha ao iniciar a captura');
       setBusy(false);

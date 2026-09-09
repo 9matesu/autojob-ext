@@ -126,12 +126,6 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
 
   function showToast(target) {
     const text = textOf(target);
-    const lines = text
-      .split(/(?<=[.!?])\s+|\n+/)
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .slice(0, 6);
-    const preview = lines.join("\n").slice(0, 600);
 
     const toast = document.createElement("div");
     toast.setAttribute("data-resume", "toast");
@@ -139,7 +133,7 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
       "position:fixed;z-index:2147483647;left:50%;transform:translateX(-50%);bottom:16px;" +
       "max-width:min(640px,92vw);background:#ffff00;color:#000;border:2px solid #000;" +
       "box-shadow:6px 6px 0px 0px #000000;pointer-events:none;" +
-      'font-family:"Space Mono",monospace;';
+      "font-family:ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;";
     const head = document.createElement("div");
     head.style.cssText =
       "display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:2px solid #000;" +
@@ -154,34 +148,54 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
     const btnCapture = document.createElement("button");
     btnCapture.textContent = "CAPTURAR";
     btnCapture.style.cssText =
-      "background:#000;color:#ffff00;border:2px solid #000;font:bold 11px monospace;" +
+      "background:#000;color:#ffff00;border:2px solid #000;font:bold 11px ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;" +
       "padding:4px 12px;cursor:pointer;pointer-events:auto;";
     const btnOther = document.createElement("button");
     btnOther.textContent = "ESCOLHER OUTRO";
     btnOther.style.cssText =
-      "background:#fff;color:#000;border:2px solid #000;font:bold 11px monospace;" +
+      "background:#fff;color:#000;border:2px solid #000;font:bold 11px ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;" +
       "padding:4px 12px;cursor:pointer;pointer-events:auto;";
-    const pre = document.createElement("pre");
-    pre.textContent = preview;
-    pre.style.cssText =
-      "margin:0;padding:8px 10px;font-size:11px;line-height:1.5;white-space:pre-wrap;" +
-      "max-height:150px;overflow:hidden;";
+    const caption = document.createElement("div");
+    caption.textContent = "EDITE O TEXTO SE PRECISAR · ENTER CAPTURA · ESC SAI";
+    caption.style.cssText =
+      "padding:4px 10px;font:bold 9px/1.4 ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;" +
+      "letter-spacing:0.06em;border-bottom:1px solid #000;";
+    const ta = document.createElement("textarea");
+    ta.value = text.slice(0, 4000);
+    ta.spellcheck = false;
+    ta.style.cssText =
+      "display:block;width:100%;box-sizing:border-box;margin:0;border:0;" +
+      "font:12px/1.5 ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;" +
+      "padding:8px 10px;max-height:160px;min-height:60px;resize:vertical;outline:none;" +
+      "color:#000;background:#ffff00;";
     head.append(tag, meta, spacer, btnOther, btnCapture);
-    toast.append(head, pre);
+    toast.append(head, caption, ta);
     document.documentElement.appendChild(toast);
 
     btnCapture.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
-      finish(target, text);
+      finish(target, ta.value);
     });
     btnOther.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
       backToSelection();
     });
+    ta.addEventListener("keydown", (ev) => {
+      // Dentro do textarea: Enter captura, Esc sai de tudo — sem engolir digitação.
+      if (ev.key === "Enter" && !ev.shiftKey) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        finish(target, ta.value);
+      } else if (ev.key === "Escape") {
+        ev.preventDefault();
+        ev.stopPropagation();
+        cancel(null);
+      }
+    });
     state.toast = toast;
-    state.pending = { el: target, text };
+    state.pending = { el: target, get text() { return ta.value; } };
   }
 
   function hideToast() {
@@ -195,11 +209,11 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
   function showHint() {
     const hint = document.createElement("div");
     hint.setAttribute("data-resume", "hint");
-    hint.textContent = "MOUSE DESTACA · ↑/↓ NAVEGA NA ÁRVORE · CLIQUE OU ENTER = PRÉVIA · ESC SAI";
+    hint.textContent = "MOUSE DESTACA · ↑/↓ NAVEGA · CLIQUE OU ENTER = PRÉVIA · ESC SAI DA CAPTURA";
     hint.style.cssText =
       "position:fixed;z-index:2147483647;top:12px;left:50%;transform:translateX(-50%);" +
       "background:#000;color:#ffff00;border:2px solid #ffff00;" +
-      'font:bold 11px/1.4 "Space Mono",monospace;padding:6px 12px;letter-spacing:0.05em;' +
+      "font:bold 11px/1.4 ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;padding:6px 12px;letter-spacing:0.05em;" +
       "white-space:nowrap;pointer-events:none;";
     document.documentElement.appendChild(hint);
     state.hint = hint;
@@ -232,8 +246,8 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
     if (e.key === "Escape") {
       e.preventDefault();
       e.stopPropagation();
-      if (state.mode === "confirm") backToSelection();
-      else cancel(null);
+      // Um ESC sai da captura inteira, esteja em select ou confirm (spec resuMe 1.0).
+      cancel(null);
     } else if (e.key === "Enter" && state.mode === "select" && state.hovered) {
       e.preventDefault();
       e.stopPropagation();
@@ -283,7 +297,7 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
     const body = (text !== undefined ? text : textOf(el)).trim();
     cleanup();
     if (body.length < 80) {
-      report({ ok: false, error: "O elemento selecionado tem pouco texto para extrair." });
+      report({ ok: false, error: "O texto editado tem pouco conteúdo para extrair." });
       return;
     }
     try {
@@ -325,7 +339,7 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
     const label = document.createElement("div");
     label.style.cssText =
       'position:absolute;top:-26px;left:0;background:#ffff00;color:#000;border:1px solid #000;' +
-      'font:bold 11px/1.4 "Space Mono",monospace;padding:2px 8px;letter-spacing:0.05em;white-space:nowrap;';
+      "font:bold 11px/1.4 ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;padding:2px 8px;letter-spacing:0.05em;white-space:nowrap;";
     overlay.appendChild(label);
     document.documentElement.appendChild(overlay);
 

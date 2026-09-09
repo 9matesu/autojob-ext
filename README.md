@@ -5,10 +5,10 @@ O detector lê o **DOM do painel da vaga que você clicou** (sem screenshot),
 envia o texto ao motor local, que extrai os dados com IA, customiza o
 **currículo base do onboarding**, compila o PDF em LaTeX e registra no histórico.
 
-**Download para usuários**: página de
-[releases](https://github.com/9matesu/autojob-ext/releases) →
-`resuMe-1.0.0-windows-x64.zip` (portável: extensão + motor + Python embutido +
-Tectonic). Instruções em [docs/INSTALACAO.md](docs/INSTALACAO.md).
+**Download para usuários**: [página do resuMe](https://matesu.me/autojob-ext)
+→ botão "Baixar para Windows" (`resuMe-1.0.0-windows-x64.zip`, portável:
+extensão + motor + Python embutido + Tectonic). Instruções em
+[docs/INSTALACAO.md](docs/INSTALACAO.md).
 
 Documentação (arquitetura, fluxo, permissões, troubleshooting):
 **[docs/EXTENSAO.md](docs/EXTENSAO.md)** · Privacidade:

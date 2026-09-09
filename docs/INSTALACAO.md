@@ -1,9 +1,13 @@
 # resuMe — Instalação (usuário final)
 
+Comece pela [página do resuMe](https://matesu.me/autojob-ext) — o botão de
+download leva direto ao pacote.
+
 ## Opção A — Pacote portável (recomendado)
 
-Baixe `resuMe-1.0.0-windows-x64.zip` na página de
-[releases](https://github.com/9matesu/autojob-ext/releases). Ele contém tudo:
+Baixe `resuMe-1.0.0-windows-x64.zip` na [página oficial](https://matesu.me/autojob-ext)
+(ou nas [releases do GitHub](https://github.com/9matesu/autojob-ext/releases)).
+Ele contém tudo:
 extensão, motor local com Python embutido e compilador LaTeX — sem instalador,
 sem pip, sem PATH.
 

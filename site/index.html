@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>resuMe — currículo LaTeX adaptado a cada vaga</title>
+<meta name="description" content="Extensão Chrome + motor local portável. Captura a vaga direto do navegador, adapta seu currículo em LaTeX e gera o PDF — sem sair da sua máquina." />
+<link rel="icon" type="image/svg+xml" href="logo.svg" />
+<!-- Switzer via Fontshare CDN: permitido pela ITF-FFL para uso no seu próprio site.
+     A extensão (zip) NÃO inclui Switzer — usa Schibsted Grotesk (OFL), servida daqui em fallback. -->
+<link href="https://api.fontshare.com/v2/css?f%5B%5D=switzer@400,500,600,700&display=swap" rel="stylesheet" />
+<style>
+  @font-face { font-family:'Instrument Serif'; font-style:normal; font-weight:400; font-display:swap;
+    src:url('fonts/instrument-regular.woff2') format('woff2'); }
+  @font-face { font-family:'Instrument Serif'; font-style:italic; font-weight:400; font-display:swap;
+    src:url('fonts/instrument-italic.woff2') format('woff2'); }
+  @font-face { font-family:'Schibsted Grotesk'; font-style:normal; font-weight:400 800; font-display:swap;
+    src:url('fonts/schibsted-grotesk.woff2') format('woff2'); }
+  :root { --ink:#000; --paper:#fff; --yellow:#ffff00; --hair:#1a1a1a; --mute:#666; }
+  * { margin:0; box-sizing:border-box; }
+  body { font-family:'Switzer','Schibsted Grotesk',system-ui,sans-serif; color:var(--ink);
+    background:var(--paper); -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:880px; margin:0 auto; padding:0 24px; }
+  header { border-bottom:2px solid var(--ink); }
+  .bar { display:flex; align-items:center; justify-content:space-between; padding:14px 0; }
+  .wordmark { font-weight:700; text-transform:uppercase; letter-spacing:-0.02em; font-size:15px; }
+  .wordmark em { font-family:'Instrument Serif'; font-style:normal; text-transform:none; letter-spacing:-0.01em; }
+  .hero { padding:72px 0 56px; border-bottom:1px solid var(--hair); }
+  h1 { font-family:'Instrument Serif'; font-weight:400; font-size:clamp(40px,7vw,64px);
+    line-height:1.04; letter-spacing:-0.02em; max-width:18ch; }
+  .sub { margin-top:20px; font-size:15px; line-height:1.6; max-width:52ch; color:#222; }
+  .cta-row { margin-top:32px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .btn { display:inline-block; background:var(--yellow); color:var(--ink); border:2px solid var(--ink);
+    box-shadow:4px 4px 0 var(--ink); font-weight:700; font-size:13px; text-transform:uppercase;
+    letter-spacing:0.04em; padding:14px 22px; text-decoration:none; transition:all .1s; }
+  .btn:hover { background:var(--ink); color:var(--yellow); }
+  .btn:active { transform:translate(2px,2px); box-shadow:none; }
+  .btn.ghost { background:var(--paper); }
+  .btn.ghost:hover { background:var(--ink); color:var(--paper); }
+  .meta { font-size:11px; color:var(--mute); letter-spacing:0.02em; }
+  section { padding:48px 0; border-bottom:1px solid var(--hair); }
+  h2 { font-family:'Instrument Serif'; font-weight:400; font-size:28px; letter-spacing:-0.01em; margin-bottom:24px; }
+  ol.steps { list-style:none; display:grid; gap:20px; counter-reset:s; }
+  ol.steps li { display:grid; grid-template-columns:44px 1fr; gap:14px; font-size:14px; line-height:1.6; }
+  ol.steps li::before { counter-increment:s; content:counter(s,decimal-leading-zero);
+    font-weight:700; font-size:12px; border:2px solid var(--ink); width:36px; height:36px;
+    display:flex; align-items:center; justify-content:center; }
+  code { border:1px solid var(--hair); padding:1px 5px; font-size:12px; background:#f5f5f5; }
+  .arch { background:#000; color:#eaeaea; font-size:11px; line-height:1.5; padding:20px;
+    overflow-x:auto; white-space:pre; margin-top:8px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+  @media (max-width:640px){ .grid2{grid-template-columns:1fr;} }
+  h3 { font-size:12px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; }
+  ul.plain { list-style:none; font-size:14px; line-height:1.8; }
+  ul.plain li::before { content:"— "; color:var(--mute); }
+  footer { padding:28px 0 40px; font-size:11px; color:var(--mute); display:flex;
+    justify-content:space-between; gap:16px; flex-wrap:wrap; text-transform:uppercase; letter-spacing:0.05em; }
+  footer a { color:var(--ink); }
+  .logo64 { width:64px; height:64px; display:block; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <a class="wordmark" href="./" style="text-decoration:none;color:inherit">resu<em>Me</em></a>
+    <span class="meta">v1.0.0 · Chrome · Windows</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <img class="logo64" src="logo.svg" alt="resuMe" width="64" height="64" />
+    <h1 style="margin-top:20px">Seu currículo, adaptado à vaga — sem sair do navegador.</h1>
+    <p class="sub">
+      resuMe captura o texto da vaga direto do DOM (LinkedIn, Gupy, Indeed, Greenhouse),
+      extrai os requisitos com a IA que <strong>você</strong> configurar, customiza seu
+      currículo base em LaTeX e compila o PDF. Motor 100% local — o pacote portável traz
+      Python embutido e compilador LaTeX; nada é enviado a servidores de terceiros.
+    </p>
+    <div class="cta-row">
+      <a class="btn" href="https://github.com/9matesu/autojob-ext/releases/download/v1.0.0/resuMe-1.0.0-windows-x64.zip">
+        Baixar resuMe-1.0.0-windows-x64.zip
+      </a>
+      <a class="btn ghost" href="https://github.com/9matesu/autojob-ext">Repositório</a>
+      <span class="meta">~75 MB · zip portável, sem instalador</span>
+    </div>
+  </div>
+
+  <section>
+    <h2>Como instalar</h2>
+    <ol class="steps">
+      <li><div><strong>Descompacte o zip em um local fixo</strong> (ex.: <code>C:\resuMe</code>). O
+        native host grava caminhos absolutos — escolha a pasta antes.</div></li>
+      <li><div>Abra <code>chrome://extensions</code>, ative <strong>Modo do desenvolvedor</strong>,
+        clique em <strong>Carregar sem compactação</strong> e escolha a pasta
+        <code>extension\</code>.</div></li>
+      <li><div>(Uma vez) Rode <code>native-host\install-host.ps1</code> — o painel lateral passa a
+        iniciar o motor sozinho. Sem isso, execute <code>start-engine.ps1</code> antes de usar.</div></li>
+      <li><div>Clique no ícone da extensão: envie seu currículo base uma vez (PDF, DOCX, TXT ou
+        .tex), configure a IA e comece a capturar vagas. <code>Alt+Shift+A</code> captura da aba ativa.</div></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Como funciona</h2>
+    <div class="grid2">
+      <div>
+        <h3>Captura honesta</h3>
+        <ul class="plain">
+          <li>Selecione o painel da vaga no modo inspetor — um clique, prévia editável.</li>
+          <li>Edite o texto capturado na prévia se o parser da página estiver sujo.</li>
+          <li>Um <kbd>ESC</kbd> sai da captura a qualquer momento.</li>
+          <li>Match percentual honesto: a IA não inventa experiência que você não tem.</li>
+        </ul>
+        <h3 style="margin-top:24px">Saída profissional</h3>
+        <ul class="plain">
+          <li>LaTeX real (Tectonic), templates revisáveis, PDF pronto para ATS.</li>
+          <li>Estúdio com edição visual e do fonte .tex, histórico local em SQLite.</li>
+          <li>11 provedores de IA (OpenAI, Anthropic, Gemini, Groq, Ollama local…).</li>
+        </ul>
+      </div>
+      <div>
+        <div class="arch">┌────────────── Chrome ──────────────┐
+│ content.js  ⇄  painel lateral   │
+│ (inspetor DOM)  (React)         │
+└────────┬──────────────┬─────────┘
+   POST /api/adapt-text │ HTTP (localhost)
+         ▼              ▼
+┌── FastAPI sidecar (:8322) ───────┐
+│ LLM → JSON → template LaTeX      │
+│ → Tectonic → PDF → SQLite        │
+│ native host sobe o motor sozinho │
+└──────────────────────────────────┘</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Privacidade</h2>
+    <ul class="plain">
+      <li>Nada de screenshots: a captura lê apenas o texto do elemento DOM que você clicou.</li>
+      <li>Perfil, chave de API e histórico ficam no SQLite local (<code>backend\data\</code>).</li>
+      <li>Único tráfego externo: a API do provedor de IA que você escolher. Opcionalmente, um
+        provedor 100% local (Ollama) zera o tráfego.</li>
+      <li>Fontes Instrument Serif e Schibsted Grotesk (OFL) embutidas na extensão — sem
+        requisições a CDNs de terceiros pelo app.</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span>resuMe © 2026</span>
+  <span><a href="https://github.com/9matesu/autojob-ext/releases">Releases</a> ·
+        <a href="https://github.com/9matesu/autojob-ext/blob/master/docs/EXTENSAO.md">Docs</a></span>
+</footer>
+</body>
+</html>

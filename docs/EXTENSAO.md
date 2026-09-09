@@ -61,10 +61,11 @@ O entregável é sempre o currículo customizado.
    selo mostra o breadcrumb real (`body > main > article.job-posting`) e a
    contagem de chars. `↑`/`↓` navegam pai/filho na árvore. Na entrada, o
    maior bloco de texto visível já vem destacado como ponto de partida
-   (dinâmico, sem listas). Um clique (ou Enter) abre o **toast de prévia**
-   com o texto exato do elemento + `CAPTURAR` / `ESCOLHER OUTRO`. O que
-   aparece no toast é byte a byte o que vai ao backend — sem parser,
-   sem poda, sem heurística no caminho.
+   (dinâmico, sem listas). Um clique (ou Enter) abre o **toast de prévia
+   editável**: o texto do elemento vira um textarea — ajuste-o se a página
+   tiver sujeira no parser — com `CAPTURAR` / `ESCOLHER OUTRO`. O que você
+   deixar no textarea (Enter captura; máx. 4000 chars na prévia, corte de
+   30k no envio) é byte a byte o que vai ao backend.
 3. **Extração da vaga** — o texto do elemento vai para `POST /api/adapt-text`.
    O LLM devolve JSON estruturado (título, empresa, local, requisitos,
    keywords) usando **só a vaga principal** (cursos/promos/vagas relacionadas
@@ -83,6 +84,9 @@ O entregável é sempre o currículo customizado.
    "Arquivo" lista tudo para rebaixar.
 
 ## Instalação
+
+> **Usuário final**: use o pacote portável — veja [INSTALACAO.md](INSTALACAO.md).
+> Abaixo, o caminho de desenvolvedor (código-fonte).
 
 1. **Backend**: `.\start-backend.ps1` (cria venv e instala deps na primeira vez;
    requer Python 3.11+). Ou deixe o auto-start cuidar disso (passo 4).
@@ -103,9 +107,9 @@ O entregável é sempre o currículo customizado.
 
 | Ação | Como |
 | --- | --- |
-| Capturar vaga | Painel → "Capturar Vaga" → clique no painel → confira a prévia → `CAPTURAR` (ou `Alt+Shift+A`) |
+| Capturar vaga | Painel → "Capturar Vaga" → clique no painel → edite a prévia se quiser → `CAPTURAR` (ou `Alt+Shift+A`) |
 | Escolher outro painel | botão `ESCOLHER OUTRO` no toast (volta à seleção) |
-| Cancelar seleção | `Esc` no toast volta à seleção; `Esc` na seleção cancela |
+| Cancelar a captura | `Esc` — em QUALQUER estado (seleção ou prévia), um único `Esc` encerra tudo |
 | Editar antes de baixar | Resultado → "Abrir Estúdio" (aba: editor Visual/LaTeX + preview PDF + recompilar) |
 | Versões anteriores | Painel → "Arquivo" → Baixar PDF |
 | Trocar IA/chave/modelo | Painel → "Config" |
@@ -124,6 +128,8 @@ Sem `activeTab`/`<all_urls>` em `host_permissions`: nada de acesso a dados de
 navegação; o único conteúdo lido é o texto do painel que **você** clicou.
 
 ## Dados e privacidade
+
+Detalhes completos em [PRIVACIDADE.md](PRIVACIDADE.md). Resumo:
 
 - Perfil mestre, API key e histórico: apenas no SQLite local (`backend/data/`).
 - O texto do painel clicado e o perfil vão para o provedor de IA configurado
@@ -147,6 +153,7 @@ navegação; o único conteúdo lido é o texto do painel que **você** clicou.
 | Estúdio mostra "Resultado expirado" | o registro sumiu do histórico (limpeza) — capture a vaga novamente no painel |
 | Pré-visualização do PDF falha | confira se o motor está rodando; use "Tentar novamente" ou "Baixar PDF" na própria tela |
 | "Motor Offline" persistente | rode `.\start-backend.ps1`; confira `backend/data/resume-backend.log`; reinstale o host se o auto-start falhar |
+| Precisa apertar ESC duas vezes para sair da captura | versão antiga (pré-1.0) da extensão carregada: recarregue o cartão em `chrome://extensions` |
 | Match aparece como "—" | o provedor não devolveu `match_score`; o valor nunca é inventado |
 | Porta 8322 ocupada por outro processo | encerre-o ou ajuste `port` em `native-host/resume-host.json` e `ui/src/chrome.ts` |
 

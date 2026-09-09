@@ -1,4 +1,4 @@
-"""FastAPI REST routes for AutoJob."""
+"""FastAPI REST routes for resuMe."""
 from __future__ import annotations
 
 import json

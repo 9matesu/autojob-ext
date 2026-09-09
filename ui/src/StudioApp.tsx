@@ -20,7 +20,7 @@ export function StudioApp() {
       <div className="h-screen flex flex-col items-center justify-center gap-3 bg-white text-black font-mono text-center p-6">
         <h1 className="font-editorial text-3xl">Nenhum resultado carregado</h1>
         <p className="text-xs text-neutral-600">
-          Abra o painel lateral do AutoJob, capture uma vaga e clique em "Abrir Estúdio".
+          Abra o painel lateral do resuMe, capture uma vaga e clique em "Abrir Estúdio".
         </p>
       </div>
     );

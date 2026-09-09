@@ -259,7 +259,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete, 
         <main className="flex-grow overflow-y-auto flex items-center justify-center p-4 md:p-8">
           <div className="w-full max-w-xl">
             <div className="mb-4 font-mono text-[11px] text-neutral-700 leading-relaxed">
-              Importe seu currículo original uma única vez. O AutoJob o usará como{' '}
+              Importe seu currículo original uma única vez. O resuMe o usará como{' '}
               <strong className="text-black underline underline-offset-2">fonte absoluta de verdade</strong>{' '}
               para sintetizar currículos em LaTeX sob medida para qualquer vaga que você navegar.
             </div>

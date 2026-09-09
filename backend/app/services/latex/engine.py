@@ -264,7 +264,7 @@ def compile_pdf(tex_source: str, workdir: Path) -> Path:
     last_err: Exception | None = None
     for attempt in (1, 2):
         try:
-            with tempfile.TemporaryDirectory(prefix="autojob_tex_") as tmp:
+            with tempfile.TemporaryDirectory(prefix="resume_tex_") as tmp:
                 tmp_path = Path(tmp)
                 if comp_type == "tectonic":
                     proc = subprocess.run(

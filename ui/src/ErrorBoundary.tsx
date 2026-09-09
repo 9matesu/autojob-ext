@@ -12,7 +12,7 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
   }
 
   componentDidCatch(error: Error): void {
-    console.error('AutoJob UI crash:', error);
+    console.error('resuMe UI crash:', error);
   }
 
   render(): React.ReactNode {

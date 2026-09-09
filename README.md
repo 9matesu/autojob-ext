@@ -1,4 +1,4 @@
-# AutoJob Studio — Chrome Extension
+# resuMe — Chrome Extension
 
 Adapta seu currículo em LaTeX para qualquer vaga, direto do navegador.
 O detector lê o **DOM do painel da vaga que você clicou** (sem screenshot),

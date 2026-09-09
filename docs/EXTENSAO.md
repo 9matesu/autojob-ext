@@ -1,4 +1,4 @@
-# AutoJob Studio — Extensão Chrome
+# resuMe — Extensão Chrome
 
 Documentação da extensão, do motor local e do fluxo ponta-a-ponta.
 
@@ -31,7 +31,7 @@ O entregável é sempre o currículo customizado.
 │ extração da vaga (LLM texto→JSON) → adaptação sobre o      │
 │ perfil mestre → template LaTeX → Tectonic → PDF → SQLite   │
 │                                                            │
-│ native messaging host (AutoJobHost.exe) sobe o motor       │
+│ native messaging host (ResumeHost.exe) sobe o motor       │
 │ automaticamente quando o painel abre                       │
 └────────────────────────────────────────────────────────────┘
 ```
@@ -92,12 +92,12 @@ O entregável é sempre o currículo customizado.
    "Carregar sem compactação" → selecionar `extension/`. A ID é fixa
    (`mkopnnfghehbonobjfjmifddejbjfdea`) porque o manifest traz uma `key` pinada.
 4. **Auto-start do motor (opcional, recomendado)**:
-   `.\native-host\install-host.ps1` — compila `AutoJobHost.exe` (PyInstaller),
-   grava a config de máquina (`autojob-host.json`), o manifest do host
-   (`com.autojob.host.json`) e registra em
-   `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.autojob.host`.
+   `.\native-host\install-host.ps1` — compila `ResumeHost.exe` (PyInstaller),
+   grava a config de máquina (`resume-host.json`), o manifest do host
+   (`com.resume.host.json`) e registra em
+   `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.resume.host`.
    Depois disso, abrir o painel com o motor desligado dispara o start
-   automático (log em `backend/data/autojob-backend.log`).
+   automático (log em `backend/data/resume-backend.log`).
 
 ## Uso diário
 
@@ -129,7 +129,7 @@ navegação; o único conteúdo lido é o texto do painel que **você** clicou.
 - O texto do painel clicado e o perfil vão para o provedor de IA configurado
   (Gemini/OpenAI/OpenRouter/Ollama local). Sem chave de API, o backend
   retorna erro explícito em vez de qualquer conteúdo — não existe dado
-  fabricado em nenhum caminho. Nada é enviado a servidores do AutoJob —
+  fabricado em nenhum caminho. Nada é enviado a servidores do resuMe —
   não existem.
 - O PDF é gerado localmente pelo Tectonic.
 
@@ -146,9 +146,9 @@ navegação; o único conteúdo lido é o texto do painel que **você** clicou.
 | Onboarding não aparece | ele só aparece sem perfil ativo; para refazer, Config → "Trocar currículo base" |
 | Estúdio mostra "Resultado expirado" | o registro sumiu do histórico (limpeza) — capture a vaga novamente no painel |
 | Pré-visualização do PDF falha | confira se o motor está rodando; use "Tentar novamente" ou "Baixar PDF" na própria tela |
-| "Motor Offline" persistente | rode `.\start-backend.ps1`; confira `backend/data/autojob-backend.log`; reinstale o host se o auto-start falhar |
+| "Motor Offline" persistente | rode `.\start-backend.ps1`; confira `backend/data/resume-backend.log`; reinstale o host se o auto-start falhar |
 | Match aparece como "—" | o provedor não devolveu `match_score`; o valor nunca é inventado |
-| Porta 8322 ocupada por outro processo | encerre-o ou ajuste `port` em `native-host/autojob-host.json` e `ui/src/chrome.ts` |
+| Porta 8322 ocupada por outro processo | encerre-o ou ajuste `port` em `native-host/resume-host.json` e `ui/src/chrome.ts` |
 
 ## Desenvolvimento
 
@@ -164,8 +164,8 @@ cd backend
 .venv\Scripts\python -m pytest tests -q
 ```
 
-Os testes rodam num banco SQLite temporário (`AUTOJOB_DATA_DIR` apontado por
-`tests/conftest.py`) — nunca tocam `backend/data/autojob.db`.
+Os testes rodam num banco SQLite temporário (`RESUME_DATA_DIR` apontado por
+`tests/conftest.py`) — nunca tocam `backend/data/resume.db`.
 
 Fixturas de seleção ficam em `extension/test/fixtures/` (LinkedIn/Indeed/Gupy-like).
 `extension/test/build_shim.py` gera o `content_shim.js` que permite dirigir o

@@ -38,7 +38,7 @@ def test_save_and_get_profile():
             "experience": [
                 {
                     "title": "Senior AI Engineer",
-                    "company": "AutoJob Corp",
+                    "company": "resuMe Corp",
                     "period": "2023 - Present",
                     "description": ["Engineered low-latency resume compiler."]
                 }

@@ -12,7 +12,7 @@ export interface EnsureBackendResult {
 export async function ensureBackend(): Promise<EnsureBackendResult> {
   if (!isExtension) return { running: false, error: 'Fora da extensao.' };
   try {
-    const res = (await chrome.runtime.sendNativeMessage('com.autojob.host', {
+    const res = (await chrome.runtime.sendNativeMessage('com.resume.host', {
       action: 'ensure-backend',
     })) as EnsureBackendResult;
     return res || { running: false, error: 'Host sem resposta.' };
@@ -27,7 +27,7 @@ export async function startCaptureSelection(): Promise<void> {
   if (!tab?.id) throw new Error('Nenhuma aba ativa encontrada.');
   let ack: { ok?: boolean; error?: string } | undefined;
   try {
-    ack = (await chrome.tabs.sendMessage(tab.id, { type: 'autojob-capture-start' })) as
+    ack = (await chrome.tabs.sendMessage(tab.id, { type: 'resume-capture-start' })) as
       | { ok?: boolean; error?: string }
       | undefined;
   } catch {
@@ -43,7 +43,7 @@ export function onCaptureResult(
 ): () => void {
   if (!isExtension) return () => {};
   const listener = (msg: any) => {
-    if (msg?.type !== 'autojob-capture-result') return;
+    if (msg?.type !== 'resume-capture-result') return;
     if (msg.payload?.ok) onResult(msg.payload.result);
     else if (msg.payload?.cancelled) onCancel();
     else onError(String(msg.payload?.error || 'Falha na captura'));
@@ -52,7 +52,7 @@ export function onCaptureResult(
   return () => chrome.runtime.onMessage.removeListener(listener);
 }
 
-const STUDIO_KEY = 'autojob_studio';
+const STUDIO_KEY = 'resume_studio';
 
 export async function saveStudioPayload(data: unknown): Promise<void> {
   if (isExtension) await chrome.storage.local.set({ [STUDIO_KEY]: data });

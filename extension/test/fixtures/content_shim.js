@@ -8,7 +8,7 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
   }
 
   function isOurs(el) {
-    return el instanceof HTMLElement && el.hasAttribute("data-autojob");
+    return el instanceof HTMLElement && el.hasAttribute("data-resume");
   }
 
   // Breadcrumb real do elemento: body > main > article.job-posting
@@ -134,7 +134,7 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
     const preview = lines.join("\n").slice(0, 600);
 
     const toast = document.createElement("div");
-    toast.setAttribute("data-autojob", "toast");
+    toast.setAttribute("data-resume", "toast");
     toast.style.cssText =
       "position:fixed;z-index:2147483647;left:50%;transform:translateX(-50%);bottom:16px;" +
       "max-width:min(640px,92vw);background:#ffff00;color:#000;border:2px solid #000;" +
@@ -194,7 +194,7 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
 
   function showHint() {
     const hint = document.createElement("div");
-    hint.setAttribute("data-autojob", "hint");
+    hint.setAttribute("data-resume", "hint");
     hint.textContent = "MOUSE DESTACA · ↑/↓ NAVEGA NA ÁRVORE · CLIQUE OU ENTER = PRÉVIA · ESC SAI";
     hint.style.cssText =
       "position:fixed;z-index:2147483647;top:12px;left:50%;transform:translateX(-50%);" +
@@ -275,7 +275,7 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
 
   function report(payload) {
     try {
-      chrome.runtime.sendMessage({ type: "autojob-capture-result", payload }).catch(() => {});
+      chrome.runtime.sendMessage({ type: "resume-capture-result", payload }).catch(() => {});
     } catch {}
   }
 
@@ -306,7 +306,7 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
       }
       report({ ok: true, result: await res.json() });
     } catch (err) {
-      report({ ok: false, error: "Backend offline. Execute o motor local do AutoJob." });
+      report({ ok: false, error: "Backend offline. Execute o motor local do resuMe." });
     }
   }
 
@@ -318,7 +318,7 @@ window.fetch = function(url, opts) { window.__posts.push(JSON.parse(opts.body));
     sendResponse({ ok: true, mode: "selecting" });
 
     const overlay = document.createElement("div");
-    overlay.setAttribute("data-autojob", "overlay");
+    overlay.setAttribute("data-resume", "overlay");
     overlay.style.cssText =
       "position:fixed;z-index:2147483646;left:0;top:0;border:3px solid #ffff00;" +
       "box-shadow:0 0 0 9999px rgba(0,0,0,0.35);pointer-events:none;display:none;";

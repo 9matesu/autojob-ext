@@ -1,4 +1,4 @@
-﻿"""AutoJob Backend Entrypoint."""
+﻿"""resuMe Backend Entrypoint."""
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(
-    title="AutoJob Engine",
+    title="resuMe Engine",
     description="Background Resume Adaptation & LaTeX Engine",
     version="0.1.0",
     lifespan=lifespan,

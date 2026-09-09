@@ -1,7 +1,7 @@
-"""AutoJob native messaging host.
+"""resuMe native messaging host.
 
 Chrome launches this executable when the extension calls
-chrome.runtime.sendNativeMessage('com.autojob.host', ...).
+chrome.runtime.sendNativeMessage('com.resume.host', ...).
 It ensures the local FastAPI backend is running on the configured port,
 spawning it detached if necessary, and replies with a status JSON.
 
@@ -23,7 +23,7 @@ if getattr(sys, "frozen", False):
     HERE = Path(sys.executable).resolve().parent
 else:
     HERE = Path(__file__).resolve().parent
-CONFIG_PATH = HERE / "autojob-host.json"
+CONFIG_PATH = HERE / "resume-host.json"
 
 
 def read_message() -> dict:
@@ -69,11 +69,11 @@ def ensure_backend(cfg: dict) -> dict:
     if not python or not backend_dir or not Path(python).exists() or not Path(backend_dir).exists():
         return {"running": False, "error": "Host nao configurado. Execute install-host.ps1."}
 
-    log_path = Path(cfg.get("log") or (Path(backend_dir) / "data" / "autojob-backend.log"))
+    log_path = Path(cfg.get("log") or (Path(backend_dir) / "data" / "resume-backend.log"))
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     env = dict(os.environ)
-    env["AUTOJOB_PORT"] = str(port)
+    env["RESUME_PORT"] = str(port)
     flags = 0
     if os.name == "nt":
         flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP

@@ -14,11 +14,11 @@ try {
       try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab?.id) return;
-        const ack = await chrome.tabs.sendMessage(tab.id, { type: "autojob-capture-start" });
+        const ack = await chrome.tabs.sendMessage(tab.id, { type: "resume-capture-start" });
         if (ack && !ack.ok) {
           chrome.runtime
             .sendMessage({
-              type: "autojob-capture-result",
+              type: "resume-capture-result",
               payload: { ok: false, error: ack.error || "Falha ao iniciar seleção." },
             })
             .catch(() => {});
@@ -26,7 +26,7 @@ try {
       } catch (err) {
         chrome.runtime
           .sendMessage({
-            type: "autojob-capture-result",
+            type: "resume-capture-result",
             payload: { ok: false, error: "Recarregue a pagina da vaga (F5) e tente de novo." },
           })
           .catch(() => {});
@@ -34,5 +34,5 @@ try {
     });
   }
 } catch (e) {
-  console.error("AutoJob SW:", e);
+  console.error("resuMe SW:", e);
 }

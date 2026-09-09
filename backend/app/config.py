@@ -1,4 +1,4 @@
-"""AutoJob Configuration and Settings."""
+"""resuMe Configuration and Settings."""
 from __future__ import annotations
 
 import os
@@ -7,7 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = Path(os.environ.get("AUTOJOB_DATA_DIR", PROJECT_ROOT / "data"))
+DATA_DIR = Path(os.environ.get("RESUME_DATA_DIR", PROJECT_ROOT / "data"))
 OUTPUT_DIR = DATA_DIR / "output"
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 TEMPLATE_DIR = TEMPLATES_DIR

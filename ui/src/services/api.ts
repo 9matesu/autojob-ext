@@ -1,5 +1,5 @@
 /**
- * AutoJob API Client — talks to the local FastAPI sidecar.
+ * resuMe API Client — talks to the local FastAPI sidecar.
  */
 import { BACKEND } from '../chrome';
 
@@ -108,7 +108,7 @@ function withAbsolutePdf(result: AdaptedResult): AdaptedResult {
 
 export async function fetchHealth(): Promise<AppHealth> {
   const res = await fetch(`${API_BASE}/health`);
-  if (!res.ok) throw new Error('Falha ao conectar no motor AutoJob');
+  if (!res.ok) throw new Error('Falha ao conectar no motor resuMe');
   return res.json();
 }
 

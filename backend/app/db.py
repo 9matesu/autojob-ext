@@ -1,4 +1,4 @@
-"""AutoJob Local Persistence (SQLite WAL mode)."""
+"""resuMe Local Persistence (SQLite WAL mode)."""
 from __future__ import annotations
 
 import sqlite3
@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .config import DATA_DIR
 
-DB_PATH: Path = DATA_DIR / "autojob.db"
+DB_PATH: Path = DATA_DIR / "resume.db"
 _local = threading.local()
 
 SCHEMA = """

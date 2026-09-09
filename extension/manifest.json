@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmNrn76hm9EW47At1jdx/sQokUF5xA5b8J7SAauxqgesGobtGWuXE5/s5c4XgFk3l5BDQ5/WREXZeo/ym9Me6AAVCF5kVyguhBvfFuWmesiE+ttlH+QV1OH8K/jXr3ge2l5bXRHmZ4V1DdYce3VLAVwJ/DReLPNys4KQpqo9EX7Q5qt9uHFdX3sQGHABRrUpZYhS/vajcCcct5eC5dms2CwyZvluWpPxpQuKmciR3OD7EdtBXiNbIoQELaivJ3wneUrecgtcq2FlfmdelE631qJ6BJJ2Di/BEvztFaeGZ7aqZY71oxISVfYp2PQi1OtuyLK2qx5OWEoEjRnhqq+Ig5QIDAQAB",
-  "name": "AutoJob Studio",
+  "name": "resuMe",
   "description": "Captura a vaga direto do navegador e adapta seu curriculo em LaTeX.",
   "version": "0.1.0",
   "minimum_chrome_version": "114",
   "action": {
-    "default_title": "AutoJob Studio"
+    "default_title": "resuMe"
   },
   "side_panel": {
     "default_path": "sidepanel.html"

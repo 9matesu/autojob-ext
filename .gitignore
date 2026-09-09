@@ -33,3 +33,6 @@ extension/logo.svg
 
 # Release staging
 /dist/
+
+# Skills vendorizados para referencia (nao distribuidos)
+.hermes/vendor/

@@ -30,3 +30,6 @@ Thumbs.db
 # Built font assets (source of truth: ui/public/fonts)
 extension/fonts/
 extension/logo.svg
+
+# Release staging
+/dist/

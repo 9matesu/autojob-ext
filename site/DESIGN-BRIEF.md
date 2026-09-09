@@ -6,6 +6,15 @@ Destilacao dos skills [`revenue-centric-design`](https://github.com/heliocosta-d
 (MIT), aplicados a `site/index.html`. Este arquivo documenta DECISOES; o
 codigo e a fonte de verdade.
 
+> **Revisão v3 (pedido do usuário):** fundo do hero = o proprio video da demo
+> com gradiente preto; paginas em scroll-snap (o usuario scrolla para saber
+> mais); animacao snap-in com overshoot; copy em parodia corporativa do hero
+> ao fim ("Sinergia com cada vaga", kickers de compliance/KPIs) mas humanizada
+> pela skill `humanizer` (sem "nao é só X, é Y", sem slogan de IA, frases
+> variadas); removidos marquee, pulse/glow e sombras brancas; botoes com
+> :focus-visible e estados coerentes em light/dark. O video `hero-bg.mp4`
+> (abstrato) foi removido — YAGNI, o da demo ja conta a historia.
+
 ## Principio -> decisao nesta pagina
 
 | Principio (fonte) | Decisao v2 |

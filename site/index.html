@@ -14,7 +14,7 @@
 <link rel="icon" type="image/svg+xml" href="logo.svg" />
 <link rel="preload" href="fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="preload" href="fonts/instrument-regular.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="assets/hero-bg.mp4" as="video" type="video/mp4" />
+<link rel="preload" href="assets/demo.mp4" as="video" type="video/mp4" />
 <!-- Switzer via Fontshare CDN: permitido pela ITF-FFL para o nosso próprio site.
      O produto (zip) usa apenas fontes OFL locais: Instrument Serif + Schibsted Grotesk. -->
 <link href="https://api.fontshare.com/v2/css?f%5B%5D=switzer@400,500,600,700&display=swap" rel="stylesheet" />
@@ -36,62 +36,38 @@
 </header>
 
 <main>
-  <section class="hero">
+  <!-- PAGINA 1: hero com o video da demo ao fundo, gradiente preto por cima -->
+  <section class="hero page">
     <div class="hero-bg" aria-hidden="true">
       <video muted autoplay loop playsinline disablepictureinpicture preload="auto"
-             poster="assets/hero-bg.jpg" src="assets/hero-bg.mp4"></video>
+             poster="assets/demo-poster.jpg" src="assets/demo.mp4"></video>
     </div>
     <div class="hero-scrim" aria-hidden="true"></div>
-    <div class="hero-grid" aria-hidden="true"></div>
     <div class="wrap">
       <span class="free-badge">Grátis · sem conta · 100% no seu PC</span>
-      <h1>Cada vaga pede um currículo diferente.<br />O resuMe escreve o seu em segundos.</h1>
+      <h1>Sinergia com cada vaga. <em style="font-style:normal;opacity:.45">(Agora de verdade.)</em></h1>
       <p class="sub">
-        Para quem aplica para vagas online e está cansado de reescrever o mesmo
-        currículo: o resuMe lê a vaga na sua tela, adapta seu currículo em LaTeX
-        e gera um PDF pronto para o recrutador — sem sair do navegador.
+        O resuMe lê a vaga na sua tela, faz o alinhamento do seu currículo com
+        os objetivos do negócio (a vaga) e devolve um PDF em LaTeX pronto para
+        o recrutador. A piada corporativa acaba aqui: a partir da próxima
+        tela, só fato.
       </p>
       <div class="cta-row">
-        <a class="btn baixar-cta hero"
+        <a class="btn baixar-cta"
            href="https://github.com/9matesu/autojob-ext/releases/download/v1.0.0/resuMe-1.0.0-windows-x64.zip">
           Baixar grátis — instala em 2 minutos
         </a>
-        <a class="btn ghost" href="#demo">Ver funcionando ↓</a>
+        <a class="btn ghost" href="#como">Role para a sério ↓</a>
       </div>
       <p class="meta cta-note">Windows 10/11 · Google Chrome · roda offline depois de instalado</p>
     </div>
+    <span class="scroll-hint">Role</span>
   </section>
 
-  <div class="marquee" aria-hidden="true">
-    <div class="marquee-track">
-      <span>Capture do site da vaga</span><span>·</span><span>Edite antes de enviar</span><span>·</span>
-      <span>LaTeX profissional</span><span>·</span><span>PDF pronto para ATS</span><span>·</span>
-      <span>Seus dados no seu PC</span><span>·</span><span>Sem conta</span><span>·</span>
-      <span>Sem telemetria</span><span>·</span>
-      <span>Capture do site da vaga</span><span>·</span><span>Edite antes de enviar</span><span>·</span>
-      <span>LaTeX profissional</span><span>·</span><span>PDF pronto para ATS</span><span>·</span>
-      <span>Seus dados no seu PC</span><span>·</span><span>Sem conta</span><span>·</span>
-      <span>Sem telemetria</span><span>·</span>
-    </div>
-  </div>
-
-  <section id="demo">
+  <!-- PAGINA 2: como funciona -->
+  <section id="como" class="content page">
     <div class="wrap">
-      <h2>Veja o resuMe em ação</h2>
-      <figure class="demo-frame reveal">
-        <video muted loop playsinline preload="none" poster="assets/demo-poster.jpg"
-               src="assets/demo.mp4"
-               aria-label="Demonstração animada do resuMe: capturar a vaga, editar a prévia e gerar o PDF"></video>
-        <figcaption class="meta" style="padding:8px 12px;background:#000;color:#ffe800;text-transform:uppercase;letter-spacing:.06em">
-          Demonstração animada (simulação) — o fluxo real em ~30 segundos
-        </figcaption>
-      </figure>
-      <p class="meta" style="margin-top:14px">Capture → edite a prévia → PDF adaptado. Sem parser sujo: o texto que você aprova é o texto que vira currículo.</p>
-    </div>
-  </section>
-
-  <section id="como">
-    <div class="wrap">
+      <p class="kicker">Onboarding em três fases</p>
       <h2>Como funciona</h2>
       <div class="steps-big">
         <div class="st reveal">
@@ -107,9 +83,9 @@
         <div class="st reveal">
           <div>
             <h3>Envie seu currículo uma única vez</h3>
-            <p>PDF, Word, texto ou LaTeX — o resuMe monta seu perfil mestre e
-            você revisa seção por seção antes de confirmar. Ele é a única
-            fonte de fatos: o que não estiver nele, a IA não escreve.</p>
+            <p>PDF, Word, texto ou LaTeX. O resuMe monta seu perfil mestre e
+            você revisa seção por seção antes de confirmar. Ele é a única fonte
+            de fatos: o que não estiver nele, a IA não escreve.</p>
           </div>
         </div>
         <div class="st reveal">
@@ -125,45 +101,50 @@
     </div>
   </section>
 
-  <section>
+  <!-- PAGINA 3: features -->
+  <section class="content page">
     <div class="wrap">
-      <h2>Feito para quem manda currículo de verdade</h2>
-      <div class="cards">
-        <div class="card reveal"><h3>Prévia editável</h3><p>O texto capturado aparece do jeito que vai ser usado. Página suja? Corrija ali, antes de enviar.</p></div>
-        <div class="card reveal"><h3>Match honesto</h3><p>O percentual de compatibilidade nunca é inflado e a IA não inventa empresa, data ou habilidade que você não tem.</p></div>
-        <div class="card reveal"><h3>LaTeX de verdade</h3><p>Templates editoriais compilados no seu PC. PDF limpo, padronizado, legível por sistemas de recrutamento.</p></div>
-        <div class="card reveal"><h3>Funciona offline</h3><p>O motor roda no seu computador. Sem servidor, sem fila, sem depender de internet para compilar.</p></div>
-        <div class="card reveal"><h3>Sua IA, sua chave</h3><p>OpenAI, Gemini, Anthropic, Groq… ou Ollama local para não enviar nada a ninguém. Você escolhe o provedor.</p></div>
-        <div class="card reveal"><h3>Qualquer site de vaga</h3><p>LinkedIn, Gupy, Indeed, Greenhouse — onde houver texto, há captura. Sem lista fechada de sites suportados.</p></div>
-      </div>
+      <p class="kicker">KPIs que importam</p>
+      <h2>O que ele faz (e o que se recusa a fazer)</h2>
+      <ul class="cards">
+        <li class="card reveal"><h3>Prévia editável</h3><p>O texto capturado aparece do jeito que vai ser usado. Página suja? Corrija ali, antes de enviar.</p></li>
+        <li class="card reveal"><h3>Match honesto</h3><p>O percentual de compatibilidade nunca é inflado. A IA não inventa empresa, data ou habilidade que você não tem.</p></li>
+        <li class="card reveal"><h3>LaTeX de verdade</h3><p>Templates editoriais compilados no seu PC. PDF limpo, padronizado, legível por sistemas de recrutamento.</p></li>
+        <li class="card reveal"><h3>Funciona offline</h3><p>O motor roda no seu computador. Não precisa de internet para compilar, e não há fila de servidor.</p></li>
+        <li class="card reveal"><h3>Sua IA, sua chave</h3><p>OpenAI, Gemini, Anthropic, Groq… ou Ollama local para não enviar nada a ninguém.</p></li>
+        <li class="card reveal"><h3>Qualquer site de vaga</h3><p>LinkedIn, Gupy, Indeed, Greenhouse. Onde houver texto, há captura. Sem lista fechada de sites.</p></li>
+      </ul>
     </div>
   </section>
 
-  <div class="pull">
+  <!-- PAGINA 4: prova / privacidade -->
+  <section id="privacidade" class="content page">
     <div class="wrap">
+      <p class="kicker">Compliance voluntário</p>
+      <h2>Seus dados ficam com você</h2>
       <!-- TODO-PROVA-SOCIAL: preencher SOMENTE com depoimentos reais coletados
            depois do lançamento. Nunca inventar avaliações ou números. -->
-      <p class="serif">Feito por quem também cansou de reescrever o mesmo currículo vaga por vaga.</p>
-    </div>
-  </div>
-
-  <section>
-    <div class="wrap">
-      <h2>Seus dados ficam com você</h2>
-      <ul class="cards" style="grid-template-columns:1fr 1fr;border:0;list-style:none">
+      <figure class="shot-frame reveal" style="max-width:720px;margin-inline:auto">
+        <img src="assets/demo-poster.jpg" width="1280" height="720" alt="Perfil mestre sendo adaptado em uma página de currículo LaTeX com 87% de compatibilidade" loading="lazy" />
+      </figure>
+      <ul class="cards" style="grid-template-columns:1fr 1fr;margin-top:28px">
         <li class="card reveal"><h3>Nada sobe para servidores nossos</h3><p>Porque não existem. A extensão conversa apenas com o motor no seu PC.</p></li>
         <li class="card reveal"><h3>Só a IA que você escolher recebe texto</h3><p>Com Ollama local, seu currículo não sai da sua máquina em momento algum.</p></li>
       </ul>
-      <p class="meta" style="margin-top:16px">Detalhes completos em <a style="color:var(--ink)" href="https://github.com/9matesu/autojob-ext/blob/master/docs/PRIVACIDADE.md">PRIVACIDADE.md</a>.</p>
+      <p class="meta" style="margin-top:16px">Detalhes em <a href="https://github.com/9matesu/autojob-ext/blob/master/docs/PRIVACIDADE.md">PRIVACIDADE.md</a>.</p>
     </div>
   </section>
 
-  <section id="faq">
+  <!-- PAGINA 5: FAQ -->
+  <section id="faq" class="content page">
     <div class="wrap">
+      <p class="kicker">Dúvidas de compliance</p>
       <h2>Perguntas que todo mundo faz</h2>
       <details class="reveal">
         <summary>É grátis de verdade?</summary>
-        <p>Sim. O resuMe é gratuito e tem <a href="https://github.com/9matesu/autojob-ext">código aberto</a> — você pode ler, auditar e modificar tudo. O único custo possível é a API de IA que você escolher usar (ou zero, com Ollama local).</p>
+        <p>Sim, e o <a href="https://github.com/9matesu/autojob-ext">código é aberto</a>:
+        você pode ler, auditar e modificar tudo. O único custo possível é a API de IA
+        que você escolher usar, e com Ollama local fica em zero.</p>
       </details>
       <details class="reveal">
         <summary>Preciso criar conta ou colocar cartão?</summary>
@@ -171,26 +152,35 @@
       </details>
       <details class="reveal">
         <summary>Meus dados vão para algum servidor?</summary>
-        <p>O texto da vaga e o seu perfil vão apenas para o provedor de IA que <em>você</em> configurar. Sem chave configurada, o app se recusa a inventar conteúdo — ele nunca fabrica currículo. Não há telemetria nem analytics.</p>
+        <p>O texto da vaga e o seu perfil vão apenas para o provedor de IA que
+        <em>você</em> configurar. Sem chave, o app se recusa a gerar conteúdo em vez de
+        inventar. Não há telemetria nem analytics.</p>
       </details>
       <details class="reveal">
         <summary>Funciona no macOS ou Linux?</summary>
-        <p>Por enquanto, Windows 10/11. Suporte para outros sistemas está nos planos — o motor é Python, então o caminho está aberto.</p>
+        <p>Por enquanto, Windows 10/11. O motor é Python, então o caminho para os outros
+        sistemas está aberto.</p>
       </details>
       <details class="reveal">
         <summary>O Windows avisou que o arquivo não é confiável. É seguro?</summary>
-        <p>O aviso do SmartScreen aparece porque software sem certificado pago sempre dispara ele — não é vírus. Está explicado passo a passo no <a href="https://github.com/9matesu/autojob-ext/blob/master/docs/INSTALACAO.md">guia de instalação</a>, e o código é aberto para auditoria.</p>
+        <p>O SmartScreen dispara em qualquer executável sem certificado pago, é o preço
+        de distribuir software sem pagar a uma certificadora. Está explicado no
+        <a href="https://github.com/9matesu/autojob-ext/blob/master/docs/INSTALACAO.md">guia de instalação</a>,
+        e o código é aberto para auditoria.</p>
       </details>
       <details class="reveal">
         <summary>A IA pode inventar experiência no meu currículo?</summary>
-        <p>As regras do prompt proíbem: ela só reorganiza e reescreve os fatos do seu perfil mestre com a ênfase da vaga. E você revisa cada linha antes de enviar — no Estúdio, com edição visual e do LaTeX.</p>
+        <p>As regras do prompt proíbem. Ela reorganiza e reescreve os fatos do seu perfil
+        mestre com a ênfase da vaga. E você revisa cada linha no Estúdio antes de enviar,
+        na edição visual ou direto no LaTeX.</p>
       </details>
     </div>
   </section>
 
-  <section class="final" style="border-bottom:0">
+  <!-- PAGINA 6: CTA final -->
+  <section id="baixar" class="content page final">
     <div class="wrap">
-      <h2>Pare de reescrever currículo.<br />Comece a capturar vagas.</h2>
+      <h2>Pare de reescrever currículo. Comece a capturar vagas.</h2>
       <a class="btn baixar-cta" style="font-size:15px;padding:18px 32px"
          href="https://github.com/9matesu/autojob-ext/releases/download/v1.0.0/resuMe-1.0.0-windows-x64.zip">
         Baixar resuMe 1.0 — grátis

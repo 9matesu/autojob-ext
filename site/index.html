@@ -3,155 +3,203 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>resuMe — currículo LaTeX adaptado a cada vaga</title>
-<meta name="description" content="Extensão Chrome + motor local portável. Captura a vaga direto do navegador, adapta seu currículo em LaTeX e gera o PDF — sem sair da sua máquina." />
+<title>resuMe — seu currículo sob medida para cada vaga</title>
+<meta name="description" content="Extensão Chrome grátis que captura a vaga na tela, adapta seu currículo em LaTeX e gera o PDF — 100% no seu PC, sem conta, sem servidor." />
+<meta property="og:title" content="resuMe — currículo adaptado a cada vaga" />
+<meta property="og:description" content="Captura a vaga direto do navegador e devolve um PDF em LaTeX pronto para o recrutador. Grátis, sem conta, roda offline." />
+<meta property="og:image" content="assets/demo-poster.jpg" />
+<meta property="og:type" content="website" />
 <link rel="icon" type="image/svg+xml" href="logo.svg" />
-<!-- Switzer via Fontshare CDN: permitido pela ITF-FFL para uso no seu próprio site.
-     A extensão (zip) NÃO inclui Switzer — usa Schibsted Grotesk (OFL), servida daqui em fallback. -->
+<link rel="preload" href="fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="fonts/instrument-regular.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="assets/demo.mp4" as="video" type="video/mp4" />
+<!-- Switzer via Fontshare CDN: permitido pela ITF-FFL para o nosso próprio site.
+     O produto (zip) usa apenas fontes OFL locais: Instrument Serif + Schibsted Grotesk. -->
 <link href="https://api.fontshare.com/v2/css?f%5B%5D=switzer@400,500,600,700&display=swap" rel="stylesheet" />
-<style>
-  @font-face { font-family:'Instrument Serif'; font-style:normal; font-weight:400; font-display:swap;
-    src:url('fonts/instrument-regular.woff2') format('woff2'); }
-  @font-face { font-family:'Instrument Serif'; font-style:italic; font-weight:400; font-display:swap;
-    src:url('fonts/instrument-italic.woff2') format('woff2'); }
-  @font-face { font-family:'Schibsted Grotesk'; font-style:normal; font-weight:400 800; font-display:swap;
-    src:url('fonts/schibsted-grotesk.woff2') format('woff2'); }
-  :root { --ink:#000; --paper:#fff; --yellow:#ffff00; --hair:#1a1a1a; --mute:#666; }
-  * { margin:0; box-sizing:border-box; }
-  body { font-family:'Switzer','Schibsted Grotesk',system-ui,sans-serif; color:var(--ink);
-    background:var(--paper); -webkit-font-smoothing:antialiased; }
-  .wrap { max-width:880px; margin:0 auto; padding:0 24px; }
-  header { border-bottom:2px solid var(--ink); }
-  .bar { display:flex; align-items:center; justify-content:space-between; padding:14px 0; }
-  .wordmark { font-weight:700; text-transform:uppercase; letter-spacing:-0.02em; font-size:15px; }
-  .wordmark em { font-family:'Instrument Serif'; font-style:normal; text-transform:none; letter-spacing:-0.01em; }
-  .hero { padding:72px 0 56px; border-bottom:1px solid var(--hair); }
-  h1 { font-family:'Instrument Serif'; font-weight:400; font-size:clamp(40px,7vw,64px);
-    line-height:1.04; letter-spacing:-0.02em; max-width:18ch; }
-  .sub { margin-top:20px; font-size:15px; line-height:1.6; max-width:52ch; color:#222; }
-  .cta-row { margin-top:32px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-  .btn { display:inline-block; background:var(--yellow); color:var(--ink); border:2px solid var(--ink);
-    box-shadow:4px 4px 0 var(--ink); font-weight:700; font-size:13px; text-transform:uppercase;
-    letter-spacing:0.04em; padding:14px 22px; text-decoration:none; transition:all .1s; }
-  .btn:hover { background:var(--ink); color:var(--yellow); }
-  .btn:active { transform:translate(2px,2px); box-shadow:none; }
-  .btn.ghost { background:var(--paper); }
-  .btn.ghost:hover { background:var(--ink); color:var(--paper); }
-  .meta { font-size:11px; color:var(--mute); letter-spacing:0.02em; }
-  section { padding:48px 0; border-bottom:1px solid var(--hair); }
-  h2 { font-family:'Instrument Serif'; font-weight:400; font-size:28px; letter-spacing:-0.01em; margin-bottom:24px; }
-  ol.steps { list-style:none; display:grid; gap:20px; counter-reset:s; }
-  ol.steps li { display:grid; grid-template-columns:44px 1fr; gap:14px; font-size:14px; line-height:1.6; }
-  ol.steps li::before { counter-increment:s; content:counter(s,decimal-leading-zero);
-    font-weight:700; font-size:12px; border:2px solid var(--ink); width:36px; height:36px;
-    display:flex; align-items:center; justify-content:center; }
-  code { border:1px solid var(--hair); padding:1px 5px; font-size:12px; background:#f5f5f5; }
-  .arch { background:#000; color:#eaeaea; font-size:11px; line-height:1.5; padding:20px;
-    overflow-x:auto; white-space:pre; margin-top:8px; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
-  @media (max-width:640px){ .grid2{grid-template-columns:1fr;} }
-  h3 { font-size:12px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; }
-  ul.plain { list-style:none; font-size:14px; line-height:1.8; }
-  ul.plain li::before { content:"— "; color:var(--mute); }
-  footer { padding:28px 0 40px; font-size:11px; color:var(--mute); display:flex;
-    justify-content:space-between; gap:16px; flex-wrap:wrap; text-transform:uppercase; letter-spacing:0.05em; }
-  footer a { color:var(--ink); }
-  .logo64 { width:64px; height:64px; display:block; }
-</style>
+<link rel="stylesheet" href="landing.css" />
+<script src="landing.js" defer></script>
 </head>
 <body>
-<header>
+
+<header class="site">
   <div class="wrap bar">
-    <a class="wordmark" href="./" style="text-decoration:none;color:inherit">resu<em>Me</em></a>
-    <span class="meta">v1.0.0 · Chrome · Windows</span>
+    <a class="wordmark" href="./">resu<span class="me">Me</span></a>
+    <nav class="top">
+      <a href="#como" class="hide-sm">Como funciona</a>
+      <a href="#faq" class="hide-sm">Perguntas</a>
+      <a href="https://github.com/9matesu/autojob-ext" class="hide-sm">GitHub</a>
+      <a class="btn sm" href="https://github.com/9matesu/autojob-ext/releases/download/v1.0.0/resuMe-1.0.0-windows-x64.zip">Baixar grátis</a>
+    </nav>
   </div>
 </header>
 
-<main class="wrap">
-  <div class="hero">
-    <img class="logo64" src="logo.svg" alt="resuMe" width="64" height="64" />
-    <h1 style="margin-top:20px">Seu currículo, adaptado à vaga — sem sair do navegador.</h1>
-    <p class="sub">
-      resuMe captura o texto da vaga direto do DOM (LinkedIn, Gupy, Indeed, Greenhouse),
-      extrai os requisitos com a IA que <strong>você</strong> configurar, customiza seu
-      currículo base em LaTeX e compila o PDF. Motor 100% local — o pacote portável traz
-      Python embutido e compilador LaTeX; nada é enviado a servidores de terceiros.
-    </p>
-    <div class="cta-row">
-      <a class="btn" href="https://github.com/9matesu/autojob-ext/releases/download/v1.0.0/resuMe-1.0.0-windows-x64.zip">
-        Baixar resuMe-1.0.0-windows-x64.zip
-      </a>
-      <a class="btn ghost" href="https://github.com/9matesu/autojob-ext">Repositório</a>
-      <span class="meta">~75 MB · zip portável, sem instalador</span>
+<main>
+  <section class="hero" style="border-bottom:2px solid var(--ink)">
+    <div class="wrap">
+      <span class="free-badge">Grátis · sem conta · 100% no seu PC</span>
+      <h1>Sua próxima vaga merece um currículo feito para&nbsp;ela.</h1>
+      <p class="sub">
+        O resuMe lê a vaga que está na sua tela, adapta seu currículo em LaTeX
+        e gera um PDF pronto para o recrutador — em segundos, sem sair do
+        navegador. Você instala uma vez e usa para sempre.
+      </p>
+      <div class="cta-row">
+        <a class="btn baixar-cta hero"
+           href="https://github.com/9matesu/autojob-ext/releases/download/v1.0.0/resuMe-1.0.0-windows-x64.zip">
+          Baixar para Windows — zip, ~76 MB
+        </a>
+        <a class="btn ghost" href="#como">Ver como funciona ↓</a>
+      </div>
+      <p class="meta cta-note">Windows 10/11 · Google Chrome · funciona offline depois de instalado</p>
+
+      <figure class="demo-frame reveal">
+        <video autoplay muted loop playsinline poster="assets/demo-poster.jpg" src="assets/demo.mp4"
+               aria-label="Demonstração animada do resuMe: capturar a vaga, editar a prévia e gerar o PDF"></video>
+        <figcaption class="meta" style="padding:8px 12px;background:#000;color:#ffe800;text-transform:uppercase;letter-spacing:.06em">
+          Demonstração animada (simulação) — o fluxo real em ~30 segundos
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span>Capture do site da vaga</span><span>·</span><span>Edite antes de enviar</span><span>·</span>
+      <span>LaTeX profissional</span><span>·</span><span>PDF pronto para ATS</span><span>·</span>
+      <span>Seus dados no seu PC</span><span>·</span><span>Sem conta</span><span>·</span>
+      <span>Sem telemetria</span><span>·</span>
+      <span>Capture do site da vaga</span><span>·</span><span>Edite antes de enviar</span><span>·</span>
+      <span>LaTeX profissional</span><span>·</span><span>PDF pronto para ATS</span><span>·</span>
+      <span>Seus dados no seu PC</span><span>·</span><span>Sem conta</span><span>·</span>
+      <span>Sem telemetria</span><span>·</span>
+    </div>
+  </div>
+
+  <section id="como">
+    <div class="wrap">
+      <h2>Como funciona</h2>
+      <div class="steps-big">
+        <div class="st reveal">
+          <div>
+            <h3>Instale em 2 minutos</h3>
+            <p>Baixe o zip, descompacte onde quiser e arraste a pasta
+            <code>extension</code> para dentro do Chrome. Não tem instalador,
+            não pede direitos de administrador, não mexe no seu Python. O <a
+            href="https://github.com/9matesu/autojob-ext/blob/master/docs/INSTALACAO.md">guia ilustrado</a>
+            mostra cada clique.</p>
+          </div>
+        </div>
+        <div class="st reveal">
+          <div>
+            <h3>Envie seu currículo uma única vez</h3>
+            <p>PDF, Word, texto ou LaTeX — o resuMe monta seu perfil mestre e
+            você revisa seção por seção antes de confirmar. Ele é a única
+            fonte de fatos: o que não estiver nele, a IA não escreve.</p>
+          </div>
+        </div>
+        <div class="st reveal">
+          <div>
+            <h3>Navegue e capture</h3>
+            <p>Viu uma vaga no LinkedIn, Gupy ou Indeed? Aperte
+            <code>Alt+Shift+A</code>, clique no texto da vaga, ajuste a prévia
+            se quiser e baixe o PDF adaptado. Um <code>Esc</code> cancela tudo
+            a qualquer momento.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Feito para quem manda currículo de verdade</h2>
+      <div class="cards">
+        <div class="card reveal"><h3>Prévia editável</h3><p>O texto capturado aparece do jeito que vai ser usado. Página suja? Corrija ali, antes de enviar.</p></div>
+        <div class="card reveal"><h3>Match honesto</h3><p>O percentual de compatibilidade nunca é inflado e a IA não inventa empresa, data ou habilidade que você não tem.</p></div>
+        <div class="card reveal"><h3>LaTeX de verdade</h3><p>Templates editoriais compilados no seu PC. PDF limpo, padronizado, legível por sistemas de recrutamento.</p></div>
+        <div class="card reveal"><h3>Funciona offline</h3><p>O motor roda no seu computador. Sem servidor, sem fila, sem depender de internet para compilar.</p></div>
+        <div class="card reveal"><h3>Sua IA, sua chave</h3><p>OpenAI, Gemini, Anthropic, Groq… ou Ollama local para não enviar nada a ninguém. Você escolhe o provedor.</p></div>
+        <div class="card reveal"><h3>Qualquer site de vaga</h3><p>LinkedIn, Gupy, Indeed, Greenhouse — onde houver texto, há captura. Sem lista fechada de sites suportados.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="pull">
+    <div class="wrap">
+      <!-- TODO-PROVA-SOCIAL: preencher SOMENTE com depoimentos reais coletados
+           depois do lançamento. Nunca inventar avaliações ou números. -->
+      <p class="serif">Feito por quem também cansou de reescrever o mesmo currículo vaga por vaga.</p>
     </div>
   </div>
 
   <section>
-    <h2>Como instalar</h2>
-    <ol class="steps">
-      <li><div><strong>Descompacte o zip em um local fixo</strong> (ex.: <code>C:\resuMe</code>). O
-        native host grava caminhos absolutos — escolha a pasta antes.</div></li>
-      <li><div>Abra <code>chrome://extensions</code>, ative <strong>Modo do desenvolvedor</strong>,
-        clique em <strong>Carregar sem compactação</strong> e escolha a pasta
-        <code>extension\</code>.</div></li>
-      <li><div>(Uma vez) Rode <code>native-host\install-host.ps1</code> — o painel lateral passa a
-        iniciar o motor sozinho. Sem isso, execute <code>start-engine.ps1</code> antes de usar.</div></li>
-      <li><div>Clique no ícone da extensão: envie seu currículo base uma vez (PDF, DOCX, TXT ou
-        .tex), configure a IA e comece a capturar vagas. <code>Alt+Shift+A</code> captura da aba ativa.</div></li>
-    </ol>
-  </section>
-
-  <section>
-    <h2>Como funciona</h2>
-    <div class="grid2">
-      <div>
-        <h3>Captura honesta</h3>
-        <ul class="plain">
-          <li>Selecione o painel da vaga no modo inspetor — um clique, prévia editável.</li>
-          <li>Edite o texto capturado na prévia se o parser da página estiver sujo.</li>
-          <li>Um <kbd>ESC</kbd> sai da captura a qualquer momento.</li>
-          <li>Match percentual honesto: a IA não inventa experiência que você não tem.</li>
-        </ul>
-        <h3 style="margin-top:24px">Saída profissional</h3>
-        <ul class="plain">
-          <li>LaTeX real (Tectonic), templates revisáveis, PDF pronto para ATS.</li>
-          <li>Estúdio com edição visual e do fonte .tex, histórico local em SQLite.</li>
-          <li>11 provedores de IA (OpenAI, Anthropic, Gemini, Groq, Ollama local…).</li>
-        </ul>
-      </div>
-      <div>
-        <div class="arch">┌────────────── Chrome ──────────────┐
-│ content.js  ⇄  painel lateral   │
-│ (inspetor DOM)  (React)         │
-└────────┬──────────────┬─────────┘
-   POST /api/adapt-text │ HTTP (localhost)
-         ▼              ▼
-┌── FastAPI sidecar (:8322) ───────┐
-│ LLM → JSON → template LaTeX      │
-│ → Tectonic → PDF → SQLite        │
-│ native host sobe o motor sozinho │
-└──────────────────────────────────┘</div>
-      </div>
+    <div class="wrap">
+      <h2>Seus dados ficam com você</h2>
+      <ul class="cards" style="grid-template-columns:1fr 1fr;border:0;list-style:none">
+        <li class="card reveal"><h3>Nada sobe para servidores nossos</h3><p>Porque não existem. A extensão conversa apenas com o motor no seu PC.</p></li>
+        <li class="card reveal"><h3>Só a IA que você escolher recebe texto</h3><p>Com Ollama local, seu currículo não sai da sua máquina em momento algum.</p></li>
+      </ul>
+      <p class="meta" style="margin-top:16px">Detalhes completos em <a style="color:var(--ink)" href="https://github.com/9matesu/autojob-ext/blob/master/docs/PRIVACIDADE.md">PRIVACIDADE.md</a>.</p>
     </div>
   </section>
 
-  <section>
-    <h2>Privacidade</h2>
-    <ul class="plain">
-      <li>Nada de screenshots: a captura lê apenas o texto do elemento DOM que você clicou.</li>
-      <li>Perfil, chave de API e histórico ficam no SQLite local (<code>backend\data\</code>).</li>
-      <li>Único tráfego externo: a API do provedor de IA que você escolher. Opcionalmente, um
-        provedor 100% local (Ollama) zera o tráfego.</li>
-      <li>Fontes Instrument Serif e Schibsted Grotesk (OFL) embutidas na extensão — sem
-        requisições a CDNs de terceiros pelo app.</li>
-    </ul>
+  <section id="faq">
+    <div class="wrap">
+      <h2>Perguntas que todo mundo faz</h2>
+      <details class="reveal">
+        <summary>É grátis de verdade?</summary>
+        <p>Sim. O resuMe é gratuito e tem <a href="https://github.com/9matesu/autojob-ext">código aberto</a> — você pode ler, auditar e modificar tudo. O único custo possível é a API de IA que você escolher usar (ou zero, com Ollama local).</p>
+      </details>
+      <details class="reveal">
+        <summary>Preciso criar conta ou colocar cartão?</summary>
+        <p>Nenhum dos dois. Baixa o zip, carrega a pasta no Chrome e usa.</p>
+      </details>
+      <details class="reveal">
+        <summary>Meus dados vão para algum servidor?</summary>
+        <p>O texto da vaga e o seu perfil vão apenas para o provedor de IA que <em>você</em> configurar. Sem chave configurada, o app se recusa a inventar conteúdo — ele nunca fabrica currículo. Não há telemetria nem analytics.</p>
+      </details>
+      <details class="reveal">
+        <summary>Funciona no macOS ou Linux?</summary>
+        <p>Por enquanto, Windows 10/11. Suporte para outros sistemas está nos planos — o motor é Python, então o caminho está aberto.</p>
+      </details>
+      <details class="reveal">
+        <summary>O Windows avisou que o arquivo não é confiável. É seguro?</summary>
+        <p>O aviso do SmartScreen aparece porque software sem certificado pago sempre dispara ele — não é vírus. Está explicado passo a passo no <a href="https://github.com/9matesu/autojob-ext/blob/master/docs/INSTALACAO.md">guia de instalação</a>, e o código é aberto para auditoria.</p>
+      </details>
+      <details class="reveal">
+        <summary>A IA pode inventar experiência no meu currículo?</summary>
+        <p>As regras do prompt proíbem: ela só reorganiza e reescreve os fatos do seu perfil mestre com a ênfase da vaga. E você revisa cada linha antes de enviar — no Estúdio, com edição visual e do LaTeX.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="final" style="border-bottom:0">
+    <div class="wrap">
+      <h2>Pare de reescrever currículo.<br />Comece a capturar vagas.</h2>
+      <a class="btn baixar-cta" style="font-size:15px;padding:18px 32px"
+         href="https://github.com/9matesu/autojob-ext/releases/download/v1.0.0/resuMe-1.0.0-windows-x64.zip">
+        Baixar resuMe 1.0 — grátis
+      </a>
+      <p class="meta" style="margin-top:14px">zip portável · Windows · sem instalador</p>
+    </div>
   </section>
 </main>
 
-<footer class="wrap">
-  <span>resuMe © 2026</span>
-  <span><a href="https://github.com/9matesu/autojob-ext/releases">Releases</a> ·
-        <a href="https://github.com/9matesu/autojob-ext/blob/master/docs/EXTENSAO.md">Docs</a></span>
+<footer class="site">
+  <div class="wrap" style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <span>resuMe © 2026</span>
+    <span>
+      <a href="https://github.com/9matesu/autojob-ext">GitHub</a> ·
+      <a href="https://github.com/9matesu/autojob-ext/releases">Releases</a> ·
+      <a href="https://github.com/9matesu/autojob-ext/blob/master/docs/EXTENSAO.md">Docs</a>
+    </span>
+  </div>
 </footer>
+
+<div class="sticky-bar">
+  <span class="wordmark" style="font-size:13px">resu<span class="me">Me</span> · grátis</span>
+  <a class="btn sm" href="https://github.com/9matesu/autojob-ext/releases/download/v1.0.0/resuMe-1.0.0-windows-x64.zip">Baixar</a>
+</div>
+
 </body>
 </html>

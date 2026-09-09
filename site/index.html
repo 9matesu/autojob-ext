@@ -14,7 +14,7 @@
 <link rel="icon" type="image/svg+xml" href="logo.svg" />
 <link rel="preload" href="fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="preload" href="fonts/instrument-regular.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="assets/demo.mp4" as="video" type="video/mp4" />
+<link rel="preload" href="assets/hero-bg.mp4" as="video" type="video/mp4" />
 <!-- Switzer via Fontshare CDN: permitido pela ITF-FFL para o nosso próprio site.
      O produto (zip) usa apenas fontes OFL locais: Instrument Serif + Schibsted Grotesk. -->
 <link href="https://api.fontshare.com/v2/css?f%5B%5D=switzer@400,500,600,700&display=swap" rel="stylesheet" />
@@ -36,31 +36,29 @@
 </header>
 
 <main>
-  <section class="hero" style="border-bottom:2px solid var(--ink)">
+  <section class="hero">
+    <div class="hero-bg" aria-hidden="true">
+      <video muted autoplay loop playsinline disablepictureinpicture preload="auto"
+             poster="assets/hero-bg.jpg" src="assets/hero-bg.mp4"></video>
+    </div>
+    <div class="hero-scrim" aria-hidden="true"></div>
+    <div class="hero-grid" aria-hidden="true"></div>
     <div class="wrap">
       <span class="free-badge">Grátis · sem conta · 100% no seu PC</span>
-      <h1>Sua próxima vaga merece um currículo feito para&nbsp;ela.</h1>
+      <h1>Cada vaga pede um currículo diferente.<br />O resuMe escreve o seu em segundos.</h1>
       <p class="sub">
-        O resuMe lê a vaga que está na sua tela, adapta seu currículo em LaTeX
-        e gera um PDF pronto para o recrutador — em segundos, sem sair do
-        navegador. Você instala uma vez e usa para sempre.
+        Para quem aplica para vagas online e está cansado de reescrever o mesmo
+        currículo: o resuMe lê a vaga na sua tela, adapta seu currículo em LaTeX
+        e gera um PDF pronto para o recrutador — sem sair do navegador.
       </p>
       <div class="cta-row">
         <a class="btn baixar-cta hero"
            href="https://github.com/9matesu/autojob-ext/releases/download/v1.0.0/resuMe-1.0.0-windows-x64.zip">
-          Baixar para Windows — zip, ~76 MB
+          Baixar grátis — instala em 2 minutos
         </a>
-        <a class="btn ghost" href="#como">Ver como funciona ↓</a>
+        <a class="btn ghost" href="#demo">Ver funcionando ↓</a>
       </div>
-      <p class="meta cta-note">Windows 10/11 · Google Chrome · funciona offline depois de instalado</p>
-
-      <figure class="demo-frame reveal">
-        <video autoplay muted loop playsinline poster="assets/demo-poster.jpg" src="assets/demo.mp4"
-               aria-label="Demonstração animada do resuMe: capturar a vaga, editar a prévia e gerar o PDF"></video>
-        <figcaption class="meta" style="padding:8px 12px;background:#000;color:#ffe800;text-transform:uppercase;letter-spacing:.06em">
-          Demonstração animada (simulação) — o fluxo real em ~30 segundos
-        </figcaption>
-      </figure>
+      <p class="meta cta-note">Windows 10/11 · Google Chrome · roda offline depois de instalado</p>
     </div>
   </section>
 
@@ -76,6 +74,21 @@
       <span>Sem telemetria</span><span>·</span>
     </div>
   </div>
+
+  <section id="demo">
+    <div class="wrap">
+      <h2>Veja o resuMe em ação</h2>
+      <figure class="demo-frame reveal">
+        <video muted loop playsinline preload="none" poster="assets/demo-poster.jpg"
+               src="assets/demo.mp4"
+               aria-label="Demonstração animada do resuMe: capturar a vaga, editar a prévia e gerar o PDF"></video>
+        <figcaption class="meta" style="padding:8px 12px;background:#000;color:#ffe800;text-transform:uppercase;letter-spacing:.06em">
+          Demonstração animada (simulação) — o fluxo real em ~30 segundos
+        </figcaption>
+      </figure>
+      <p class="meta" style="margin-top:14px">Capture → edite a prévia → PDF adaptado. Sem parser sujo: o texto que você aprova é o texto que vira currículo.</p>
+    </div>
+  </section>
 
   <section id="como">
     <div class="wrap">

@@ -16,14 +16,18 @@ test('CTA de download aponta para o release v1.0.0 (>=2x)', () => {
   assert.match(html, /releases\/download\/v1\.0\.0\/resuMe-1\.0\.0-windows-x64\.zip/);
   assert.ok((html.match(/baixar-cta/g) || []).length >= 2);
 });
-test('V3: background do hero usa o VIDEO DA DEMO com gradiente preto', () => {
+test('V3: fundo = video da demo a DIREITA, gradiente preto da esquerda, sem zoom', () => {
   assert.match(html, /class="hero-bg"[\s\S]{0,400}?assets\/demo\.mp4/);
   assert.match(html, /class="hero-bg"[\s\S]{0,400}?>\s*<video[^>]+muted[^>]+autoplay[^>]+loop[^>]+playsinline/);
   assert.match(html, /class="hero-scrim"/);
-  assert.match(css, /\.hero-scrim\s*\{[^}]*linear-gradient\(rgba\(0,\s*0,\s*0/);
+  assert.match(css, /\.hero-scrim\s*\{[^}]*linear-gradient\(to right, rgba\(0,\s*0,\s*0/);
   assert.match(css, /\.hero-scrim\s*\{[^}]*z-index:\s*1/);
   assert.match(css, /\.hero-bg\s*\{[^}]*z-index:\s*0/);
   assert.match(css, /\.hero\s*>\s*\.wrap\s*\{[^}]*z-index:\s*2/);
+  // sem zoom: contain, nao cover full-bleed no lado direito
+  assert.match(css, /\.hero-bg video\s*\{[^}]*object-fit:\s*contain/);
+  // video ocupa faixa direita, texto a esquerda
+  assert.match(css, /\.hero-bg\s*\{[^}]*inset:\s*0 0 0 auto/);
 });
 test('V3: hero full-bleed (largura total da pagina)', () => {
   assert.match(css, /\.hero\s*\{[^}]*width:\s*100vw/);

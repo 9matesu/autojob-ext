@@ -58,18 +58,32 @@ nav.top a:hover { text-decoration: underline; }
 .meta { font-size: 11px; color: var(--mute); letter-spacing: 0.02em; }
 a { color: inherit; }
 
-/* ===== V3 hero: video da demo ao fundo, gradiente preto, texto na frente ===== */
-/* Pilha: .hero-bg(z0) -> .hero-scrim(z1 gradiente) -> .wrap(z2) */
+/* ===== V3 hero: texto a esquerda, video da demo a direita, gradiente preto ===== */
+/* Pilha: .hero-bg(z0, faixa direita) -> .hero-scrim(z1 gradiente L->R) -> .wrap(z2) */
 .hero { position: relative; width: 100vw; min-height: 100svh; display: flex;
-  align-items: center; overflow: hidden; color: #fff; border-bottom: 2px solid var(--ink); }
+  align-items: center; overflow: hidden; color: #fff; border-bottom: 2px solid var(--ink);
+  background: var(--ink); }
 .hero > .wrap { position: relative; z-index: 2; padding-block: 120px 96px; }
-.hero-bg { position: absolute; inset: 0; z-index: 0; }
-.hero-bg video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero-bg { position: absolute; inset: 0 0 0 auto; z-index: 0; width: min(58%, 920px);
+  display: flex; align-items: center; }
+.hero-bg video { width: 100%; height: 100%; object-fit: contain; display: block; }
+/* opaco no lado do texto -> transparente sobre o video (sem blur, brutal flat) */
 .hero-scrim { position: absolute; inset: 0; z-index: 1; background:
-  linear-gradient(rgba(0, 0, 0, .72), rgba(0, 0, 0, .84)); }
+  linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, .94) 34%,
+    rgba(0, 0, 0, .55) 52%, rgba(0, 0, 0, .12) 68%, rgba(0, 0, 0, 0) 100%); }
+@media (max-width: 900px) {
+  /* pilha vertical: video vira faixa no rodape do hero, gradiente volta a vertical */
+  .hero { flex-direction: column; justify-content: flex-start; }
+  .hero > .wrap { width: 100%; padding-inline: 24px; padding-block: 100px 24px; order: -1; }
+  .hero-bg { position: relative; inset: auto; width: 100%; flex: 1; min-height: 240px; }
+  .hero-scrim { background: linear-gradient(to bottom,
+      rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, .9) 34%, rgba(0, 0, 0, .35) 52%, rgba(0, 0, 0, 0) 100%); }
+  .scroll-hint { display: none; }
+}
 .hero h1 { color: #fff; font-family: 'Instrument Serif'; font-weight: 400;
-  font-size: clamp(42px, 7vw, 72px); line-height: 1.03; letter-spacing: -0.02em; max-width: 15ch; margin-top: 20px; }
-.hero .sub { color: #d6d6d6; margin-top: 20px; font-size: 16px; line-height: 1.65; max-width: 56ch; }
+  font-size: clamp(36px, 4.6vw, 58px); line-height: 1.05; letter-spacing: -0.02em;
+  max-width: 14ch; margin-top: 20px; }
+.hero .sub { color: #d6d6d6; margin-top: 20px; font-size: 16px; line-height: 1.65; max-width: 46ch; }
 .hero .meta { color: #9a9a9a; }
 .hero .free-badge { background: var(--yellow); color: #000; }
 .hero .btn.ghost { background: transparent; color: #fff; border-color: #fff; box-shadow: 4px 4px 0 #fff; }

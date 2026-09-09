@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <rect width="128" height="128" fill="#000"/>
-  <!-- M: monoline geometric grotesque, miter apex -->
-  <path d="M22 98V34l24 30 24-30v64" fill="none" stroke="#FFFF00" stroke-width="12" stroke-linejoin="miter"/>
-  <!-- e: single-story monoline circle with bar, open bottom-right -->
-  <path d="M112 70H76a18 18 0 1 0 18 18" fill="none" stroke="#FFFF00" stroke-width="12"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#FFE800"/>
+  <text x="256" y="330" text-anchor="middle"
+        font-family="Helvetica, Arial, sans-serif" font-weight="bold"
+        font-size="300" letter-spacing="-18" fill="#000">Me</text>
 </svg>

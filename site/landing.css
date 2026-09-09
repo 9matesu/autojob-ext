@@ -63,14 +63,16 @@ a { color: inherit; }
 .hero { position: relative; width: 100vw; min-height: 100svh; display: flex;
   align-items: center; overflow: hidden; color: #fff; border-bottom: 2px solid var(--ink);
   background: var(--ink); }
-.hero > .wrap { position: relative; z-index: 2; padding-block: 120px 96px; }
-.hero-bg { position: absolute; inset: 0 0 0 auto; z-index: 0; width: min(58%, 920px);
-  display: flex; align-items: center; }
-.hero-bg video { width: 100%; height: 100%; object-fit: contain; display: block; }
+.hero > .wrap { position: relative; z-index: 2; padding-block: 120px 96px;
+  max-width: none; margin: 0; width: 100%; padding-inline: clamp(24px, 6vw, 88px); }
+.hero-bg { position: absolute; inset: 0; z-index: 0; }
+.hero-bg video { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* opaco no lado do texto -> transparente sobre o video (sem blur, brutal flat) */
 .hero-scrim { position: absolute; inset: 0; z-index: 1; background:
-  linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, .94) 34%,
-    rgba(0, 0, 0, .55) 52%, rgba(0, 0, 0, .12) 68%, rgba(0, 0, 0, 0) 100%); }
+  linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, .97) 40%,
+    rgba(0, 0, 0, .78) 52%, rgba(0, 0, 0, .3) 66%, rgba(0, 0, 0, 0) 80%); }
+.hero h1, .hero .sub, .hero .free-badge, .hero .cta-row, .hero .meta { max-width: 560px; }
+.hero .sub { max-width: 52ch; }
 @media (max-width: 900px) {
   /* pilha vertical: video vira faixa no rodape do hero, gradiente volta a vertical */
   .hero { flex-direction: column; justify-content: flex-start; }

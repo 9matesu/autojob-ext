@@ -22,6 +22,7 @@ test('video demo referenciado com poster e autoplay muted', () => {
 });
 test('arquivos de asset existem no disco', () => {
   for (const f of ['../assets/demo.mp4', '../assets/demo-poster.jpg',
+                   '../assets/hero-bg.mp4', '../assets/hero-bg.jpg',
                    '../landing.css', '../landing.js'])
     assert.ok(existsSync(new URL(f, import.meta.url)), f + ' missing');
 });
@@ -44,4 +45,32 @@ test('sem jargão técnico nem prova social fabricada', () => {
   assert.doesNotMatch(html, /native host|sidecar|FastAPI|SQLite/i);
   assert.match(html, /TODO-PROVA-SOCIAL/); // slot explicitamente vazio
   assert.doesNotMatch(html, /\d+[\d.]*\s*(mil|k usuários|usuários ativos|downloads)/i);
+});
+
+// ===== V2: hero em camadas (video de fundo) =====
+test('V2: hero tem video de fundo + scrim + grid', () => {
+  assert.match(html, /class="hero-bg"[\s\S]{0,400}?assets\/hero-bg\.mp4/);
+  assert.match(html, /class="hero-scrim"/);
+  assert.match(html, /class="hero-grid"/);
+  assert.match(html, /class="hero-bg"[\s\S]{0,400}?>\s*<video[^>]+muted[^>]+autoplay[^>]+loop[^>]+playsinline/);
+  assert.match(html, /hero-bg\.jpg/); // poster do fundo
+});
+test('V2: ordem das camadas documentada no CSS', () => {
+  const css = readFileSync(new URL('../landing.css', import.meta.url), 'utf8');
+  assert.match(css, /\.hero-bg\s*\{[^}]*z-index:\s*0/);
+  assert.match(css, /\.hero-scrim\s*\{[^}]*z-index:\s*1/);
+  assert.match(css, /\.hero-grid\s*\{[^}]*z-index:\s*1/);
+  assert.match(css, /\.hero\s*>\s*\.wrap\s*\{[^}]*z-index:\s*2/);
+});
+test('V2: demo.mp4 virou secao propria "Veja funcionando" e e lazy', () => {
+  assert.match(html, /id="demo"[\s\S]{0,160}?<h2/);
+  assert.match(html, /demo\.mp4[\s\S]{0,80}?preload="none"|preload="none"[\s\S]{0,80}?demo\.mp4/);
+});
+test('V2: CTA hero declara resultado e tempo', () => {
+  assert.match(html, /class="btn baixar-cta hero"[\s\S]{0,220}?instala em 2 minutos/i);
+});
+test('V2: landing.js pausa o video de fundo em reduced-motion', () => {
+  const js = readFileSync(new URL('../landing.js', import.meta.url), 'utf8');
+  assert.match(js, /\.pause\(\)/);
+  assert.match(js, /hero-bg/);
 });

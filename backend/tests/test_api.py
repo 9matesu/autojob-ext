@@ -264,3 +264,24 @@ Go, Python, Docker, Kubernetes, AWS, PostgreSQL, Redis, Kafka
     assert "Python" in profile["skills"]
     assert "Docker" in profile["skills"]
 
+
+def test_adapt_text_misconfig_never_500(monkeypatch):
+    """resuMe 1.0 guard: missing key / missing profile must be a clean 4xx,
+    never a 500 — the side panel surfaces `detail` verbatim to the user."""
+    _patch_settings(monkeypatch, _keyless_settings())
+    client = TestClient(app)
+    client.delete("/api/profile")
+    resp = client.post("/api/adapt-text", json={
+        "job_text": SAMPLE_JOB_TEXT,
+        "page_title": "Anything",
+        "page_url": "https://example.com/job/1",
+    })
+    assert resp.status_code in (400, 409)
+    assert resp.json()["detail"]
+    test_save_and_get_profile()
+    resp2 = client.post("/api/adapt-text", json={
+        "job_text": SAMPLE_JOB_TEXT,
+        "page_title": "Anything",
+        "page_url": "https://example.com/job/2",
+    })
+    assert resp2.status_code in (400, 409)

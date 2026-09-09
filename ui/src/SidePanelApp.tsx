@@ -278,6 +278,10 @@ export function SidePanelApp() {
                   </div>
                 )}
 
+                <p className="text-[10px] font-mono text-neutral-400">
+                  adaptação gerada por {health.ai_provider} · revise antes de enviar
+                </p>
+
                 <div className="grid grid-cols-2 gap-2">
                   <a
                     href={result.adaptation.pdf_url}

@@ -26,3 +26,7 @@ native-host/*.spec
 *.log
 .DS_Store
 Thumbs.db
+
+# Built font assets (source of truth: ui/public/fonts)
+extension/fonts/
+extension/logo.svg

@@ -1,13 +1,49 @@
 @import "tailwindcss";
 
+/* resuMe typography — TWO families only:
+   - Instrument Serif (OFL): editorial headlines
+   - Schibsted Grotesk (OFL): everything functional. Variable woff2 = one file.
+   Switzer is visually near-identical but its ITF-FFL license forbids bundling
+   in a distributed zip; it is used on the website via Fontshare CDN only. */
+@font-face {
+  font-family: 'Schibsted Grotesk';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/schibsted-grotesk.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/instrument-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/instrument-italic.woff2') format('woff2');
+}
+
+@theme {
+  --font-sans: 'Schibsted Grotesk', system-ui, sans-serif;
+  --font-mono: 'Schibsted Grotesk', system-ui, sans-serif; /* intentional: the product has only two families */
+}
+
 @layer base {
   html, body, #root {
     height: 100%;
   }
 
   body {
-    font-family: 'Space Mono', monospace, ui-monospace, monospace;
+    font-family: 'Schibsted Grotesk', system-ui, sans-serif;
     @apply bg-white text-black antialiased selection:bg-black selection:text-white;
+  }
+
+  button, input, textarea, select {
+    font-family: inherit;
   }
 }
 
@@ -36,7 +72,7 @@
   background-color: #ffffff;
   color: #000000;
   border: 2px solid #000000;
-  font-family: 'Space Mono', monospace;
+  font-family: inherit;
   font-weight: 700;
   text-transform: uppercase;
   box-shadow: 3px 3px 0px 0px #000000;
@@ -58,7 +94,7 @@
   background-color: #ffff00;
   color: #000000;
   border: 2px solid #000000;
-  font-family: 'Space Mono', monospace;
+  font-family: inherit;
   font-weight: 700;
   text-transform: uppercase;
   box-shadow: 3px 3px 0px 0px #000000;
@@ -101,7 +137,7 @@
   background-color: #ffffff;
   color: #000000;
   border: 2px solid #000000;
-  font-family: 'Space Mono', monospace;
+  font-family: inherit;
   font-size: 12px;
   padding: 8px 10px;
   outline: none;
@@ -144,7 +180,7 @@ textarea.brutal-input {
   background-color: #ffffff;
   color: #000000;
   padding: 2px 8px;
-  font-family: 'Space Mono', monospace;
+  font-family: inherit;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -166,7 +202,7 @@ textarea.brutal-input {
 .ledger-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: 'Space Mono', monospace;
+  font-family: inherit;
   font-size: 12px;
   text-align: left;
 }

@@ -45,7 +45,7 @@ export const ApplicationHistory: React.FC = () => {
         </div>
       ) : history.length === 0 ? (
         <div className="py-20 text-center brutal-card p-8">
-          <h3 className="text-sm font-bold uppercase">Nenhuma vaga adaptada ainda</h3>
+          <h3 className="font-editorial text-xl normal-case">Nenhuma vaga adaptada ainda</h3>
           <p className="text-xs text-neutral-600 mt-2 max-w-sm mx-auto font-mono">
             Abra uma vaga no navegador e clique em "Capturar Vaga" para adaptá-la instantaneamente.
           </p>

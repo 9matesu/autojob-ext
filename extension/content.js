@@ -137,7 +137,7 @@
       "position:fixed;z-index:2147483647;left:50%;transform:translateX(-50%);bottom:16px;" +
       "max-width:min(640px,92vw);background:#ffff00;color:#000;border:2px solid #000;" +
       "box-shadow:6px 6px 0px 0px #000000;pointer-events:none;" +
-      'font-family:"Space Mono",monospace;';
+      'font-family:ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;';
     const head = document.createElement("div");
     head.style.cssText =
       "display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:2px solid #000;" +
@@ -152,12 +152,12 @@
     const btnCapture = document.createElement("button");
     btnCapture.textContent = "CAPTURAR";
     btnCapture.style.cssText =
-      "background:#000;color:#ffff00;border:2px solid #000;font:bold 11px monospace;" +
+      "background:#000;color:#ffff00;border:2px solid #000;font:bold 11px ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;" +
       "padding:4px 12px;cursor:pointer;pointer-events:auto;";
     const btnOther = document.createElement("button");
     btnOther.textContent = "ESCOLHER OUTRO";
     btnOther.style.cssText =
-      "background:#fff;color:#000;border:2px solid #000;font:bold 11px monospace;" +
+      "background:#fff;color:#000;border:2px solid #000;font:bold 11px ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;" +
       "padding:4px 12px;cursor:pointer;pointer-events:auto;";
     const pre = document.createElement("pre");
     pre.textContent = preview;
@@ -197,7 +197,7 @@
     hint.style.cssText =
       "position:fixed;z-index:2147483647;top:12px;left:50%;transform:translateX(-50%);" +
       "background:#000;color:#ffff00;border:2px solid #ffff00;" +
-      'font:bold 11px/1.4 "Space Mono",monospace;padding:6px 12px;letter-spacing:0.05em;' +
+      'font:bold 11px/1.4 ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;padding:6px 12px;letter-spacing:0.05em;' +
       "white-space:nowrap;pointer-events:none;";
     document.documentElement.appendChild(hint);
     state.hint = hint;
@@ -323,7 +323,7 @@
     const label = document.createElement("div");
     label.style.cssText =
       'position:absolute;top:-26px;left:0;background:#ffff00;color:#000;border:1px solid #000;' +
-      'font:bold 11px/1.4 "Space Mono",monospace;padding:2px 8px;letter-spacing:0.05em;white-space:nowrap;';
+      'font:bold 11px/1.4 ui-sans-serif,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;padding:2px 8px;letter-spacing:0.05em;white-space:nowrap;';
     overlay.appendChild(label);
     document.documentElement.appendChild(overlay);
 

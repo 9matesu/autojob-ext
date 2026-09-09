@@ -145,7 +145,7 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({ adaptedData })
         <div className="p-4 hairline-b bg-white flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-black text-sm uppercase tracking-tight">{adaptedData.job.title}</h2>
+              <h2 className="font-editorial text-lg normal-case leading-tight">{adaptedData.job.title}</h2>
               <span className="text-xs text-neutral-500 font-medium">na {adaptedData.job.company}</span>
             </div>
             {adaptedData.job.location && (

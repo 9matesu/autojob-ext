@@ -3,10 +3,11 @@
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmNrn76hm9EW47At1jdx/sQokUF5xA5b8J7SAauxqgesGobtGWuXE5/s5c4XgFk3l5BDQ5/WREXZeo/ym9Me6AAVCF5kVyguhBvfFuWmesiE+ttlH+QV1OH8K/jXr3ge2l5bXRHmZ4V1DdYce3VLAVwJ/DReLPNys4KQpqo9EX7Q5qt9uHFdX3sQGHABRrUpZYhS/vajcCcct5eC5dms2CwyZvluWpPxpQuKmciR3OD7EdtBXiNbIoQELaivJ3wneUrecgtcq2FlfmdelE631qJ6BJJ2Di/BEvztFaeGZ7aqZY71oxISVfYp2PQi1OtuyLK2qx5OWEoEjRnhqq+Ig5QIDAQAB",
   "name": "resuMe",
   "description": "Captura a vaga direto do navegador e adapta seu curriculo em LaTeX.",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "minimum_chrome_version": "114",
   "action": {
-    "default_title": "resuMe"
+    "default_title": "resuMe",
+    "default_icon": { "16": "assets/icon-16.png", "32": "assets/icon-32.png", "48": "assets/icon-48.png", "128": "assets/icon-128.png" }
   },
   "side_panel": {
     "default_path": "sidepanel.html"
@@ -16,17 +17,35 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["sidePanel", "storage", "tabs"],
-  "host_permissions": ["http://127.0.0.1:8322/*"],
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8322/*"
+  ],
   "commands": {
     "capture": {
-      "suggested_key": { "default": "Alt+Shift+A" },
+      "suggested_key": {
+        "default": "Alt+Shift+A"
+      },
       "description": "Capturar painel da vaga"
     }
+  },
+  "icons": {
+    "16": "assets/icon-16.png",
+    "32": "assets/icon-32.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
   }
 }
